@@ -1,0 +1,19 @@
+.layout {
+  display: flex;
+  min-height: 100vh;
+  background: #f0f2f5;
+}
+
+.main {
+  margin-left: 260px;
+  flex: 1;
+  padding: 40px;
+  transition: margin-left 0.3s ease;
+}
+
+@media (max-width: 900px) {
+  .main {
+    margin-left: 0;
+    padding: 64px 20px 20px;
+  }
+}
