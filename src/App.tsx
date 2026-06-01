@@ -13,7 +13,8 @@ import Footer       from './components/Footer/Footer';
 
 // Sistema
 import SistemaLayout  from './layouts/SistemaLayout';
-import Usuarios from './pages/sistema/Usuarios/Usuarios';
+import Usuarios       from './pages/sistema/Usuarios/Usuarios';
+import LandingPageConfig from './pages/sistema/LandingPage/LandingPage';
 import Leads          from './pages/sistema/Leads';
 import Clientes       from './pages/sistema/Clientes';
 import Agenda         from './pages/sistema/Agenda';
@@ -50,7 +51,7 @@ export default function App() {
         <Route path="/sistema" element={<SistemaLayout />}>
           <Route index element={<Navigate to="usuarios" replace />} />
           <Route path="usuarios"     element={<Usuarios />} />
-          <Route path="landing-page" element={<div><h1>Landing Page</h1></div>} />
+          <Route path="landing-page" element={<LandingPageConfig />} />
           <Route path="artigos"      element={<div><h1>Artigos</h1></div>} />
           <Route path="leads"        element={<Leads />} />
           <Route path="clientes"     element={<Clientes />} />
