@@ -1,0 +1,19 @@
+import type { Notificacao } from './types';
+
+export const mockNotificacoes: Notificacao[] = [
+  { id: 1,  tipo: 'prazo',        evento: 'Prazo vencendo em 2 dias',        descricao: 'Protocolo de contestação - Ação Indenizatória',                         processo: '502341-89.2023.8.26.0100',  dataHora: '22/05/2024 às 14:30', lida: false },
+  { id: 2,  tipo: 'movimentacao', evento: 'Nova movimentação registrada',      descricao: 'Conclusão para despacho - Juntada de petição',                          processo: '104592-12.2022.5.02.0001',  dataHora: '22/05/2024 às 11:15', lida: false },
+  { id: 3,  tipo: 'sistema',      evento: 'Sincronização com CNJ concluída',   descricao: 'Atualização automática de 45 processos realizada com sucesso',           processo: 'Sistema Global',            dataHora: '22/05/2024 às 08:00', lida: true  },
+  { id: 4,  tipo: 'lead',         evento: 'Novo lead recebido',                descricao: 'Interesse em consultoria societária via site institucional',             processo: 'Comercial / CRM',           dataHora: '21/05/2024 às 17:45', lida: true  },
+  { id: 5,  tipo: 'prazo',        evento: 'Prazo vencendo em 5 dias',          descricao: 'Recurso Ordinário - Tribunal Regional do Trabalho',                      processo: '0000451-22.2023.5.02.0012', dataHora: '21/05/2024 às 15:20', lida: true  },
+  { id: 6,  tipo: 'movimentacao', evento: 'Nova movimentação registrada',      descricao: 'Despacho publicado - Citação do réu',                                   processo: '301221-44.2021.8.26.0100',  dataHora: '20/05/2024 às 09:00', lida: true  },
+  { id: 7,  tipo: 'sistema',      evento: 'Falha na integração com API',       descricao: 'Tentativa de sincronização com o CNJ retornou erro 503',                 processo: 'Sistema Global',            dataHora: '19/05/2024 às 23:55', lida: true  },
+  { id: 8,  tipo: 'lead',         evento: 'Novo lead recebido',                descricao: 'Solicitação de consultoria trabalhista via formulário',                  processo: 'Comercial / CRM',           dataHora: '19/05/2024 às 16:10', lida: true  },
+  { id: 9,  tipo: 'prazo',        evento: 'Prazo vencendo em 1 dia',           descricao: 'Impugnação ao cumprimento de sentença',                                  processo: '887654-11.2020.8.26.0100',  dataHora: '18/05/2024 às 10:00', lida: true  },
+  { id: 10, tipo: 'movimentacao', evento: 'Nova movimentação registrada',      descricao: 'Sentença proferida - Procedente em parte',                              processo: '654321-77.2019.8.26.0001',  dataHora: '17/05/2024 às 14:00', lida: true  },
+  { id: 11, tipo: 'sistema',      evento: 'Sincronização com CNJ concluída',   descricao: 'Atualização automática de 12 processos realizada com sucesso',           processo: 'Sistema Global',            dataHora: '17/05/2024 às 08:00', lida: true  },
+  { id: 12, tipo: 'lead',         evento: 'Novo lead recebido',                descricao: 'Interesse em M&A via LinkedIn',                                         processo: 'Comercial / CRM',           dataHora: '16/05/2024 às 11:30', lida: true  },
+  { id: 13, tipo: 'prazo',        evento: 'Prazo vencendo em 3 dias',          descricao: 'Memorial em processo de inventário',                                    processo: '112233-55.2022.8.26.0100',  dataHora: '15/05/2024 às 09:45', lida: true  },
+  { id: 14, tipo: 'movimentacao', evento: 'Nova movimentação registrada',      descricao: 'Audiência de conciliação designada',                                    processo: '998877-33.2023.5.02.0001',  dataHora: '14/05/2024 às 16:00', lida: true  },
+  { id: 15, tipo: 'sistema',      evento: 'Backup automático realizado',        descricao: 'Backup dos dados do sistema concluído com sucesso',                     processo: 'Sistema Global',            dataHora: '13/05/2024 às 02:00', lida: true  },
+];
