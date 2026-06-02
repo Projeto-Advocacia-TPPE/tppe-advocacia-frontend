@@ -21,8 +21,8 @@ import LandingPageConfig from './pages/sistema/LandingPage/LandingPage';
 import Notificacoes     from './pages/sistema/Notificacoes/Notificacoes';
 import Leads            from './pages/sistema/Leads';
 import Clientes         from './pages/sistema/Clientes';
-import Agenda           from './pages/sistema/Agenda';
-import Processos        from './pages/sistema/Processos';
+import Agenda from './pages/sistema/Agenda/Agenda';
+import Processos from './pages/sistema/Processos/Processos';
 import Tarefas          from './pages/sistema/Tarefas';
 
 function LandingPage() {
