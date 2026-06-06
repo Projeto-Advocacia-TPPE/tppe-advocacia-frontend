@@ -48,7 +48,8 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         {/* Landing page */}
-        <Route path="/" element={<LandingPage />} />
+        {/* Redirect root to sistema */}
+        <Route path="/" element={<Navigate to="/sistema" replace />} />
 
         {/* Auth */}
         <Route path="/login" element={<Login />} />
