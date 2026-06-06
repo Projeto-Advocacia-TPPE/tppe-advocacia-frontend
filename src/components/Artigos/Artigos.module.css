@@ -1,0 +1,126 @@
+.section { background: var(--navy); padding: 100px 0; }
+
+.inner { max-width: var(--max-width); margin: 0 auto; padding: 0 var(--px); }
+
+.header { margin-bottom: 48px; }
+
+.tag {
+  font-size: .72rem; font-weight: 700; letter-spacing: .18em;
+  text-transform: uppercase; color: rgba(255,255,255,.45); margin-bottom: 10px;
+}
+
+.heading {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  color: var(--white); font-weight: 700;
+}
+
+/* Carrossel */
+.carouselRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.sideArrow {
+  flex-shrink: 0;
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.25);
+  background: transparent;
+  color: rgba(255,255,255,.7);
+  font-size: 1.4rem;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: border-color .2s, color .2s;
+  line-height: 1;
+  padding-bottom: 1px;
+}
+.sideArrow:first-child { transform: scaleX(-1); }
+.sideArrow:hover:not(:disabled) { border-color: var(--white); color: var(--white); }
+.sideArrow:disabled { opacity: .25; cursor: default; }
+
+/* O wrap esconde o que transborda */
+.gridWrap {
+  flex: 1;
+  overflow: hidden;
+}
+
+/* O track tem largura dupla e contém dois grids lado a lado */
+.track {
+  display: flex;
+  width: 200%;
+}
+
+/* Cada grid ocupa metade do track (= 100% do wrap) */
+.grid {
+  width: 50%;
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 36px;
+}
+
+/* Cards */
+.date {
+  font-size: .78rem; color: rgba(255,255,255,.4);
+  letter-spacing: .06em; margin-bottom: 14px;
+}
+
+.cardTitle {
+  font-family: var(--font-display);
+  font-size: 1.08rem; color: var(--white);
+  font-weight: 700; line-height: 1.35; margin-bottom: 14px;
+}
+
+.excerpt {
+  color: rgba(255,255,255,.55);
+  font-size: .88rem; line-height: 1.7; margin-bottom: 20px;
+}
+
+.leia {
+  color: var(--white); font-weight: 700; font-size: .88rem;
+  display: inline-flex; align-items: center; gap: 6px; transition: gap .2s;
+}
+.leia:hover { gap: 10px; }
+
+/* Paginação */
+.nav {
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px; margin-top: 48px;
+}
+
+.arrowBtn {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.25);
+  background: transparent; color: rgba(255,255,255,.7);
+  cursor: pointer; font-size: 1.2rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color .2s, color .2s;
+  line-height: 1; padding-bottom: 1px;
+}
+.arrowBtn:hover:not(:disabled) { border-color: var(--white); color: var(--white); }
+.arrowBtn:disabled { opacity: .25; cursor: default; }
+
+.pageBtn {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: none; background: transparent;
+  color: rgba(255,255,255,.5); cursor: pointer;
+  font-size: .88rem; font-family: var(--font-body);
+  transition: color .2s;
+}
+.pageBtn:hover { color: var(--white); }
+.pageBtn.active { background: rgba(255,255,255,.15); color: var(--white); }
+
+.dots { color: rgba(255,255,255,.35); font-size: .85rem; }
+
+.showing {
+  text-align: center; color: rgba(255,255,255,.35);
+  font-size: .78rem; margin-top: 12px;
+}
+.showing strong { color: rgba(255,255,255,.65); }
+
+@media (max-width: 900px) {
+  .grid { grid-template-columns: 1fr; }
+  .sideArrow { display: none; }
+}
