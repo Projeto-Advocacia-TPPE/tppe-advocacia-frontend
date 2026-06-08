@@ -13,6 +13,8 @@ import {
   Pencil,
   Plus,
   RefreshCw,
+  SlidersHorizontal,
+  Trash2,
   UserRound,
 } from 'lucide-react';
 import Modal from '../../components/sistema/Modal/Modal';
@@ -27,6 +29,7 @@ import {
   TaskStatus,
   TaskWrite,
   createTask,
+  deleteTask,
   getTaskKanban,
   moveTask,
   updateTask,
@@ -118,7 +121,10 @@ function toDateTimeLocal(value: string | null): string {
 }
 
 function errorMessage(error: unknown): string {
-  if (error instanceof ApiError) return error.message;
+  if (error instanceof ApiError) {
+    if (error.status === 403) return 'Somente o criador da tarefa ou um administrador pode excluí-la.';
+    return error.message;
+  }
   return 'Não foi possível concluir a operação.';
 }
 
@@ -137,6 +143,12 @@ export default function Tarefas() {
   const [clients, setClients] = useState<ClientListItem[]>([]);
   const [processes, setProcesses] = useState<ProcessListItem[]>([]);
   const [users, setUsers] = useState<UserOption[]>([]);
+  const [assignedToFilter, setAssignedToFilter] = useState<number | ''>('');
+  const [clientFilter, setClientFilter] = useState<number | ''>('');
+  const [processFilter, setProcessFilter] = useState<number | ''>('');
+  const [deletingTask, setDeletingTask] = useState<Task | null>(null);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const [feedback, setFeedback] = useState<{ message: string; kind: 'success' | 'error' } | null>(null);
 
   const metrics = useMemo(() => ({
@@ -150,7 +162,11 @@ export default function Tarefas() {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
     try {
-      setKanban(await getTaskKanban());
+      setKanban(await getTaskKanban({
+        assignedTo: assignedToFilter,
+        clientId: clientFilter,
+        processId: processFilter,
+      }));
     } catch (error) {
       showFeedback(errorMessage(error), 'error');
     } finally {
@@ -160,13 +176,16 @@ export default function Tarefas() {
   }
 
   useEffect(() => {
-    void loadKanban();
     void Promise.all([
       listClients({ limit: 100 }).then(response => setClients(response.data)),
       listProcesses({ limit: 100 }).then(response => setProcesses(response.data)),
       listActiveUsers().then(response => setUsers(response.data)).catch(() => setUsers([])),
     ]).catch(error => showFeedback(errorMessage(error), 'error'));
   }, []);
+
+  useEffect(() => {
+    void loadKanban();
+  }, [assignedToFilter, clientFilter, processFilter]);
 
   function showFeedback(message: string, kind: 'success' | 'error' = 'success') {
     setFeedback({ message, kind });
@@ -267,6 +286,34 @@ export default function Tarefas() {
     }
   }
 
+  function clearFilters() {
+    setAssignedToFilter('');
+    setClientFilter('');
+    setProcessFilter('');
+  }
+
+  function openDelete(task: Task) {
+    setDeletingTask(task);
+    setDeleteError('');
+  }
+
+  async function handleDelete() {
+    if (!deletingTask) return;
+    setDeleteSubmitting(true);
+    setDeleteError('');
+    try {
+      const title = deletingTask.title;
+      await deleteTask(deletingTask.id);
+      setDeletingTask(null);
+      await loadKanban(true);
+      showFeedback(`"${title}" excluída com sucesso.`);
+    } catch (error) {
+      setDeleteError(errorMessage(error));
+    } finally {
+      setDeleteSubmitting(false);
+    }
+  }
+
   return (
     <div className={styles.page}>
       {feedback && (
@@ -298,6 +345,28 @@ export default function Tarefas() {
         <Metric icon={<Clock3 size={20} />} label="Em aberto" value={metrics.open} tone="blue" />
         <Metric icon={<AlertCircle size={20} />} label="Prioridade alta" value={metrics.urgent} tone="crimson" />
         <Metric icon={<CalendarClock size={20} />} label="Vencendo ou atrasadas" value={metrics.dueSoon} tone="amber" />
+      </section>
+
+      <section className={styles.filters}>
+        <div className={styles.filterTitle}>
+          <SlidersHorizontal size={16} />
+          <span>Filtrar quadro</span>
+        </div>
+        <select value={assignedToFilter} onChange={event => setAssignedToFilter(event.target.value ? Number(event.target.value) : '')}>
+          <option value="">Todos os responsáveis</option>
+          {users.map(user => <option value={user.id} key={user.id}>{user.name}</option>)}
+        </select>
+        <select value={clientFilter} onChange={event => setClientFilter(event.target.value ? Number(event.target.value) : '')}>
+          <option value="">Todos os clientes</option>
+          {clients.map(client => <option value={client.id} key={client.id}>{client.name}</option>)}
+        </select>
+        <select value={processFilter} onChange={event => setProcessFilter(event.target.value ? Number(event.target.value) : '')}>
+          <option value="">Todos os processos</option>
+          {processes.map(process => <option value={process.id} key={process.id}>{process.number}</option>)}
+        </select>
+        {(assignedToFilter || clientFilter || processFilter) && (
+          <button onClick={clearFilters}>Limpar filtros</button>
+        )}
       </section>
 
       <section className={styles.board} aria-label="Quadro de tarefas">
@@ -344,6 +413,15 @@ export default function Tarefas() {
                           aria-label="Editar tarefa"
                         >
                           <Pencil size={14} />
+                        </button>
+                        <button
+                          className={styles.deleteCardButton}
+                          onClick={() => openDelete(task)}
+                          onMouseDown={event => event.stopPropagation()}
+                          title="Excluir tarefa"
+                          aria-label="Excluir tarefa"
+                        >
+                          <Trash2 size={14} />
                         </button>
                         <GripVertical size={16} className={styles.grip} aria-hidden="true" />
                       </div>
@@ -466,6 +544,28 @@ export default function Tarefas() {
               </button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {deletingTask && (
+        <Modal title="Excluir tarefa" onClose={() => setDeletingTask(null)} width={500}>
+          <div className={styles.deleteContent}>
+            <div className={styles.deleteNotice}>
+              <Trash2 size={20} />
+              <div>
+                <strong>Excluir “{deletingTask.title}”?</strong>
+                <p>A tarefa será removida do quadro. Esta ação não pode ser desfeita.</p>
+              </div>
+            </div>
+            {deleteError && <p className={styles.formError}>{deleteError}</p>}
+            <div className={styles.formActions}>
+              <button type="button" className={styles.cancelButton} onClick={() => setDeletingTask(null)}>Cancelar</button>
+              <button type="button" className={styles.deleteButton} onClick={() => void handleDelete()} disabled={deleteSubmitting}>
+                <Trash2 size={15} />
+                {deleteSubmitting ? 'Excluindo...' : 'Excluir tarefa'}
+              </button>
+            </div>
+          </div>
         </Modal>
       )}
     </div>

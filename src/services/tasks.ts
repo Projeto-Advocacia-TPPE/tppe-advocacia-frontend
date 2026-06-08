@@ -41,8 +41,17 @@ export type TaskWrite = {
   process_id: number | null;
 };
 
-export async function getTaskKanban(): Promise<TaskKanban> {
-  const response = await apiRequest<SuccessResponse<TaskKanban>>('/tasks/kanban');
+export async function getTaskKanban(params: {
+  assignedTo?: number | '';
+  clientId?: number | '';
+  processId?: number | '';
+} = {}): Promise<TaskKanban> {
+  const query = new URLSearchParams();
+  if (params.assignedTo) query.set('assigned_to', String(params.assignedTo));
+  if (params.clientId) query.set('client_id', String(params.clientId));
+  if (params.processId) query.set('process_id', String(params.processId));
+  const suffix = query.size ? `?${query}` : '';
+  const response = await apiRequest<SuccessResponse<TaskKanban>>(`/tasks/kanban${suffix}`);
   return response.data;
 }
 
@@ -60,6 +69,10 @@ export async function updateTask(taskId: number, payload: TaskWrite): Promise<Ta
     body: JSON.stringify(payload),
   });
   return response.data;
+}
+
+export async function deleteTask(taskId: number): Promise<void> {
+  await apiRequest(`/tasks/${taskId}`, { method: 'DELETE' });
 }
 
 export async function moveTask(taskId: number, status: TaskStatus, order: number): Promise<Task> {
