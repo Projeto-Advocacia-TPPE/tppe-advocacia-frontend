@@ -31,8 +31,34 @@ export type KanbanColumn = {
 
 export type TaskKanban = Record<TaskStatus, KanbanColumn>;
 
+export type TaskWrite = {
+  title: string;
+  description: string | null;
+  due_date: string | null;
+  priority: TaskPriority;
+  assigned_to: number | null;
+  client_id: number | null;
+  process_id: number | null;
+};
+
 export async function getTaskKanban(): Promise<TaskKanban> {
   const response = await apiRequest<SuccessResponse<TaskKanban>>('/tasks/kanban');
+  return response.data;
+}
+
+export async function createTask(payload: TaskWrite): Promise<Task> {
+  const response = await apiRequest<SuccessResponse<Task>>('/tasks', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  return response.data;
+}
+
+export async function updateTask(taskId: number, payload: TaskWrite): Promise<Task> {
+  const response = await apiRequest<SuccessResponse<Task>>(`/tasks/${taskId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
   return response.data;
 }
 

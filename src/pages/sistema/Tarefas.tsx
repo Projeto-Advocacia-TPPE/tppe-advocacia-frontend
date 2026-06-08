@@ -1,4 +1,4 @@
-import { DragEvent, useEffect, useMemo, useState } from 'react';
+import { DragEvent, FormEvent, useEffect, useMemo, useState } from 'react';
 import {
   AlertCircle,
   ArrowLeft,
@@ -10,17 +10,26 @@ import {
   GripVertical,
   Link2,
   LockKeyhole,
+  Pencil,
+  Plus,
   RefreshCw,
   UserRound,
 } from 'lucide-react';
+import Modal from '../../components/sistema/Modal/Modal';
 import { ApiError } from '../../services/api';
+import { ClientListItem, listClients } from '../../services/clients';
+import { UserOption, listActiveUsers } from '../../services/leads';
+import { ProcessListItem, listProcesses } from '../../services/processes';
 import {
   Task,
   TaskKanban,
   TaskPriority,
   TaskStatus,
+  TaskWrite,
+  createTask,
   getTaskKanban,
   moveTask,
+  updateTask,
 } from '../../services/tasks';
 import styles from './Tarefas.module.css';
 
@@ -41,6 +50,26 @@ const PRIORITY_LABELS: Record<TaskPriority, string> = {
   LOW: 'Baixa',
   MEDIUM: 'Média',
   HIGH: 'Alta',
+};
+
+type TaskForm = {
+  title: string;
+  description: string;
+  dueDate: string;
+  priority: TaskPriority;
+  assignedTo: number | '';
+  clientId: number | '';
+  processId: number | '';
+};
+
+const EMPTY_FORM: TaskForm = {
+  title: '',
+  description: '',
+  dueDate: '',
+  priority: 'MEDIUM',
+  assignedTo: '',
+  clientId: '',
+  processId: '',
 };
 
 function emptyKanban(): TaskKanban {
@@ -81,6 +110,13 @@ function dueLabel(value: string | null): string {
   return formatDueDate(value);
 }
 
+function toDateTimeLocal(value: string | null): string {
+  if (!value) return '';
+  const date = new Date(value);
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 16);
+}
+
 function errorMessage(error: unknown): string {
   if (error instanceof ApiError) return error.message;
   return 'Não foi possível concluir a operação.';
@@ -93,6 +129,14 @@ export default function Tarefas() {
   const [movingId, setMovingId] = useState<number | null>(null);
   const [draggingId, setDraggingId] = useState<number | null>(null);
   const [dropTarget, setDropTarget] = useState<TaskStatus | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [form, setForm] = useState<TaskForm>(EMPTY_FORM);
+  const [formSubmitting, setFormSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [clients, setClients] = useState<ClientListItem[]>([]);
+  const [processes, setProcesses] = useState<ProcessListItem[]>([]);
+  const [users, setUsers] = useState<UserOption[]>([]);
   const [feedback, setFeedback] = useState<{ message: string; kind: 'success' | 'error' } | null>(null);
 
   const metrics = useMemo(() => ({
@@ -117,6 +161,11 @@ export default function Tarefas() {
 
   useEffect(() => {
     void loadKanban();
+    void Promise.all([
+      listClients({ limit: 100 }).then(response => setClients(response.data)),
+      listProcesses({ limit: 100 }).then(response => setProcesses(response.data)),
+      listActiveUsers().then(response => setUsers(response.data)).catch(() => setUsers([])),
+    ]).catch(error => showFeedback(errorMessage(error), 'error'));
   }, []);
 
   function showFeedback(message: string, kind: 'success' | 'error' = 'success') {
@@ -158,6 +207,66 @@ export default function Tarefas() {
     if (task) void handleMove(task, status, kanban[status].items.length);
   }
 
+  function updateForm<K extends keyof TaskForm>(field: K, value: TaskForm[K]) {
+    setForm(current => ({ ...current, [field]: value }));
+  }
+
+  function openCreate() {
+    setEditingTask(null);
+    setForm(EMPTY_FORM);
+    setFormError('');
+    setShowCreate(true);
+  }
+
+  function openEdit(task: Task) {
+    setShowCreate(false);
+    setEditingTask(task);
+    setForm({
+      title: task.title,
+      description: task.description ?? '',
+      dueDate: toDateTimeLocal(task.due_date),
+      priority: task.priority,
+      assignedTo: task.assigned_to ?? '',
+      clientId: task.client_id ?? '',
+      processId: task.process_id ?? '',
+    });
+    setFormError('');
+  }
+
+  function closeForm() {
+    setShowCreate(false);
+    setEditingTask(null);
+    setFormError('');
+  }
+
+  async function handleSaveTask(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setFormError('');
+    const payload: TaskWrite = {
+      title: form.title.trim(),
+      description: form.description.trim() || null,
+      due_date: form.dueDate ? new Date(form.dueDate).toISOString() : null,
+      priority: form.priority,
+      assigned_to: form.assignedTo || null,
+      client_id: form.clientId || null,
+      process_id: form.processId || null,
+    };
+
+    setFormSubmitting(true);
+    try {
+      const saved = editingTask
+        ? await updateTask(editingTask.id, payload)
+        : await createTask(payload);
+      closeForm();
+      await loadKanban(true);
+      showFeedback(editingTask ? `"${saved.title}" atualizada com sucesso.` : `"${saved.title}" criada em A fazer.`);
+    } catch (error) {
+      setFormError(errorMessage(error));
+    } finally {
+      setFormSubmitting(false);
+    }
+  }
+
   return (
     <div className={styles.page}>
       {feedback && (
@@ -172,10 +281,16 @@ export default function Tarefas() {
           <h1>Tarefas</h1>
           <p className={styles.subtitle}>Acompanhe o trabalho do escritório por etapa.</p>
         </div>
-        <button className={styles.refreshButton} onClick={() => void loadKanban(true)} disabled={refreshing}>
-          <RefreshCw size={17} className={refreshing ? styles.spinning : ''} />
-          Atualizar
-        </button>
+        <div className={styles.headerActions}>
+          <button className={styles.refreshButton} onClick={() => void loadKanban(true)} disabled={refreshing}>
+            <RefreshCw size={17} className={refreshing ? styles.spinning : ''} />
+            Atualizar
+          </button>
+          <button className={styles.primaryButton} onClick={openCreate}>
+            <Plus size={17} />
+            Nova tarefa
+          </button>
+        </div>
       </header>
 
       <section className={styles.metrics}>
@@ -221,7 +336,17 @@ export default function Tarefas() {
                       <span className={`${styles.priority} ${styles[`priority${task.priority}`]}`}>
                         {PRIORITY_LABELS[task.priority]}
                       </span>
-                      <GripVertical size={16} className={styles.grip} aria-hidden="true" />
+                      <div className={styles.cardTools}>
+                        <button
+                          onClick={() => openEdit(task)}
+                          onMouseDown={event => event.stopPropagation()}
+                          title="Editar tarefa"
+                          aria-label="Editar tarefa"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <GripVertical size={16} className={styles.grip} aria-hidden="true" />
+                      </div>
                     </div>
                     <h3>{task.title}</h3>
                     {task.description && <p className={styles.description}>{task.description}</p>}
@@ -281,6 +406,68 @@ export default function Tarefas() {
           );
         })}
       </section>
+
+      {(showCreate || editingTask) && (
+        <Modal title={editingTask ? 'Editar tarefa' : 'Criar tarefa'} onClose={closeForm} width={660}>
+          <form className={styles.taskForm} onSubmit={handleSaveTask}>
+            <div className={styles.formGrid}>
+              <label className={styles.fullField}>
+                <span>Título *</span>
+                <input required maxLength={150} value={form.title} onChange={event => updateForm('title', event.target.value)} />
+              </label>
+              <label className={styles.fullField}>
+                <span>Descrição</span>
+                <textarea rows={4} maxLength={5000} value={form.description} onChange={event => updateForm('description', event.target.value)} />
+              </label>
+              <label>
+                <span>Prioridade</span>
+                <select value={form.priority} onChange={event => updateForm('priority', event.target.value as TaskPriority)}>
+                  <option value="LOW">Baixa</option>
+                  <option value="MEDIUM">Média</option>
+                  <option value="HIGH">Alta</option>
+                </select>
+              </label>
+              <label>
+                <span>Vencimento</span>
+                <input type="datetime-local" value={form.dueDate} onChange={event => updateForm('dueDate', event.target.value)} />
+              </label>
+              <label>
+                <span>Responsável</span>
+                <select value={form.assignedTo} onChange={event => updateForm('assignedTo', event.target.value ? Number(event.target.value) : '')}>
+                  <option value="">Sem responsável</option>
+                  {users.map(user => <option value={user.id} key={user.id}>{user.name}</option>)}
+                </select>
+                {users.length === 0 && <small>Responsáveis disponíveis apenas para administradores.</small>}
+              </label>
+              <label>
+                <span>Cliente vinculado</span>
+                <select value={form.clientId} onChange={event => updateForm('clientId', event.target.value ? Number(event.target.value) : '')}>
+                  <option value="">Nenhum cliente</option>
+                  {clients.map(client => <option value={client.id} key={client.id}>{client.name}</option>)}
+                </select>
+              </label>
+              <label className={styles.fullField}>
+                <span>Processo vinculado</span>
+                <select value={form.processId} onChange={event => updateForm('processId', event.target.value ? Number(event.target.value) : '')}>
+                  <option value="">Nenhum processo</option>
+                  {processes.map(process => (
+                    <option value={process.id} key={process.id}>{process.number} · {process.action_type}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            {formError && <p className={styles.formError}>{formError}</p>}
+
+            <div className={styles.formActions}>
+              <button type="button" className={styles.cancelButton} onClick={closeForm}>Cancelar</button>
+              <button type="submit" className={styles.submitButton} disabled={formSubmitting}>
+                {formSubmitting ? 'Salvando...' : editingTask ? 'Salvar alterações' : 'Criar tarefa'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   );
 }
