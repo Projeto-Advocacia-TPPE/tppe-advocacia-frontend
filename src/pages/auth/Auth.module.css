@@ -166,6 +166,10 @@
   margin-bottom: 16px;
 }
 .btnSubmit:hover { background: var(--navy-mid); }
+.btnSubmit:disabled {
+  cursor: not-allowed;
+  opacity: .6;
+}
 
 /* Error message */
 .errorMsg {

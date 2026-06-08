@@ -1,66 +1,57 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowLeft } from 'lucide-react';
+import { ApiError } from '../../services/api';
+import { login, requestPasswordReset } from '../../services/auth';
 import styles from './Auth.module.css';
 
-// E-mails válidos mockados
-const USUARIOS_VALIDOS = [
-  { email: 'vitor.f@gmail.com',   senha: '123456' },
-  { email: 'beatriz.c@gmail.com', senha: '123456' },
-  { email: 'eduardo.c@gmail.com', senha: '123456' },
-];
-
-type Tela = 'login' | 'esqueci' | 'nova-senha' | 'sucesso';
+type Tela = 'login' | 'esqueci' | 'solicitado';
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [tela, setTela] = useState<Tela>('login');
 
-  // Login
   const [email, setEmail]       = useState('');
   const [senha, setSenha]       = useState('');
-  const [erroLogin, setErroLogin] = useState(false);
+  const [erroLogin, setErroLogin] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  // Esqueci senha
   const [emailRec, setEmailRec]   = useState('');
-  const [erroRec, setErroRec]     = useState(false);
+  const [erroRec, setErroRec]     = useState('');
 
-  // Nova senha
-  const [novaSenha, setNovaSenha]         = useState('');
-  const [confirmSenha, setConfirmSenha]   = useState('');
-  const [erroSenhas, setErroSenhas]       = useState(false);
-
-  // ── Handlers ──────────────────────────────────────────
-  function handleLogin() {
-    const valido = USUARIOS_VALIDOS.some(u => u.email === email && u.senha === senha);
-    if (valido) {
-      navigate('/sistema');
-    } else {
-      setErroLogin(true);
+  async function handleLogin() {
+    setLoading(true);
+    setErroLogin('');
+    try {
+      await login(email, senha);
+      const from = (location.state as { from?: string } | null)?.from;
+      navigate(from ?? '/sistema', { replace: true });
+    } catch (error) {
+      setErroLogin(
+        error instanceof ApiError && error.status >= 500
+          ? 'A API está indisponível no momento.'
+          : 'E-mail ou senha incorretos.',
+      );
+    } finally {
+      setLoading(false);
     }
   }
 
-  function handleEsqueci() {
-    const existe = USUARIOS_VALIDOS.some(u => u.email === emailRec);
-    if (existe) {
-      setErroRec(false);
-      setTela('nova-senha');
-    } else {
-      setErroRec(true);
+  async function handleEsqueci() {
+    setLoading(true);
+    setErroRec('');
+    try {
+      await requestPasswordReset(emailRec);
+      setTela('solicitado');
+    } catch {
+      setErroRec('Não foi possível solicitar a redefinição agora.');
+    } finally {
+      setLoading(false);
     }
   }
 
-  function handleRedefinir() {
-    if (novaSenha !== confirmSenha || novaSenha.length < 4) {
-      setErroSenhas(true);
-    } else {
-      setErroSenhas(false);
-      setTela('sucesso');
-    }
-  }
-
-  // ── Shared components ─────────────────────────────────
   function InputField({
     label, type = 'text', value, onChange, icon, error = false, placeholder,
   }: {
@@ -85,7 +76,6 @@ export default function Login() {
     );
   }
 
-  // ── Render ────────────────────────────────────────────
   return (
     <div className={styles.bg}>
       <div className={styles.logo}>
@@ -102,25 +92,31 @@ export default function Login() {
               <h1 className={styles.cardTitle}>Login</h1>
 
               <InputField
-                label="E-MAIL" value={email} onChange={v => { setEmail(v); setErroLogin(false); }}
-                icon={<Mail size={16} />} error={erroLogin} placeholder="justice@sovereign.law"
+                label="E-MAIL" value={email} onChange={v => { setEmail(v); setErroLogin(''); }}
+                icon={<Mail size={16} />} error={Boolean(erroLogin)} placeholder="seu@email.com"
               />
 
               <div className={styles.forgotRow}>
-                <button className={styles.forgotLink} onClick={() => { setTela('esqueci'); setErroLogin(false); }}>
+                <button className={styles.forgotLink} onClick={() => { setTela('esqueci'); setErroLogin(''); }}>
                   Esqueci minha Senha
                 </button>
               </div>
 
               <InputField
                 label="SENHA" type="password" value={senha}
-                onChange={v => { setSenha(v); setErroLogin(false); }}
-                icon={<Lock size={16} />} error={erroLogin} placeholder="••••••••••••"
+                onChange={v => { setSenha(v); setErroLogin(''); }}
+                icon={<Lock size={16} />} error={Boolean(erroLogin)} placeholder="••••••••••••"
               />
 
-              <button className={styles.btnSubmit} onClick={handleLogin}>Entrar</button>
+              <button
+                className={styles.btnSubmit}
+                onClick={() => void handleLogin()}
+                disabled={loading || !email || !senha}
+              >
+                {loading ? 'Entrando...' : 'Entrar'}
+              </button>
 
-              {erroLogin && <p className={styles.errorMsg}>E-mail ou senha incorretos</p>}
+              {erroLogin && <p className={styles.errorMsg}>{erroLogin}</p>}
             </>
           )}
 
@@ -134,13 +130,19 @@ export default function Login() {
 
               <InputField
                 label="E-MAIL" value={emailRec}
-                onChange={v => { setEmailRec(v); setErroRec(false); }}
-                icon={<Mail size={16} />} error={erroRec} placeholder="justice@sovereign.law"
+                onChange={v => { setEmailRec(v); setErroRec(''); }}
+                icon={<Mail size={16} />} error={Boolean(erroRec)} placeholder="seu@email.com"
               />
 
-              <button className={styles.btnSubmit} onClick={handleEsqueci}>Enviar</button>
+              <button
+                className={styles.btnSubmit}
+                onClick={() => void handleEsqueci()}
+                disabled={loading || !emailRec}
+              >
+                {loading ? 'Enviando...' : 'Enviar'}
+              </button>
 
-              {erroRec && <p className={styles.errorMsg}>E-mail não registrado</p>}
+              {erroRec && <p className={styles.errorMsg}>{erroRec}</p>}
 
               <button className={styles.backLink} onClick={() => setTela('login')}>
                 <ArrowLeft size={14} /> Voltar para Login
@@ -148,45 +150,17 @@ export default function Login() {
             </>
           )}
 
-          {/* ── NOVA SENHA ── */}
-          {tela === 'nova-senha' && (
+          {tela === 'solicitado' && (
             <>
               <h1 className={styles.cardTitle} style={{ textAlign: 'left', fontSize: '1.4rem' }}>
-                Redefinir senha
+                Verifique seu e-mail
               </h1>
-              <p className={styles.cardSubtitle}>Informe a nova senha</p>
+              <p className={styles.successMsg}>
+                Se o endereço estiver cadastrado, você receberá as instruções para
+                redefinir sua senha.
+              </p>
 
-              <InputField
-                label="SENHA" type="password" value={novaSenha}
-                onChange={v => { setNovaSenha(v); setErroSenhas(false); }}
-                icon={<Lock size={16} />} error={erroSenhas} placeholder="••••••••••••"
-              />
-
-              <InputField
-                label="CONFIRME A SENHA" type="password" value={confirmSenha}
-                onChange={v => { setConfirmSenha(v); setErroSenhas(false); }}
-                icon={<Lock size={16} />} error={erroSenhas} placeholder="••••••••••••"
-              />
-
-              <button className={styles.btnSubmit} onClick={handleRedefinir}>Redefinir Senha</button>
-
-              {erroSenhas && <p className={styles.errorMsg}>As senhas não coincidem</p>}
-
-              <button className={styles.backLink} onClick={() => setTela('login')}>
-                <ArrowLeft size={14} /> Voltar para Login
-              </button>
-            </>
-          )}
-
-          {/* ── SUCESSO ── */}
-          {tela === 'sucesso' && (
-            <>
-              <h1 className={styles.cardTitle} style={{ textAlign: 'left', fontSize: '1.4rem' }}>
-                Redefinir senha
-              </h1>
-              <p className={styles.successMsg}>Senha alterada com sucesso!</p>
-
-              <button className={styles.backLink} onClick={() => { setTela('login'); setNovaSenha(''); setConfirmSenha(''); setEmail(''); setSenha(''); }}>
+              <button className={styles.backLink} onClick={() => { setTela('login'); setEmailRec(''); }}>
                 <ArrowLeft size={14} /> Voltar para Login
               </button>
             </>

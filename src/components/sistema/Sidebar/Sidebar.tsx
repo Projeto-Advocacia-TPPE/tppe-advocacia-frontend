@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
+  House,
   Users,
   Layout,
   FileText,
@@ -13,10 +14,14 @@ import {
   User,
   PanelLeftClose,
   PanelLeftOpen,
+  LogOut,
 } from 'lucide-react';
+import { getSessionClaims } from '../../../services/api';
+import { logout } from '../../../services/auth';
 import styles from './Sidebar.module.css';
 
 const NAV_ITEMS = [
+  { label: 'Início',        href: '/sistema',               icon: House        },
   { label: 'Usuários',      href: '/sistema/usuarios',      icon: Users        },
   { label: 'Landing Page',  href: '/sistema/landing-page',  icon: Layout       },
   { label: 'Artigos',       href: '/sistema/artigos',        icon: FileText     },
@@ -29,8 +34,15 @@ const NAV_ITEMS = [
 ];
 
 export default function Sidebar() {
+  const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const role = getSessionClaims()?.role === 'ADMIN' ? 'Administrador' : 'Usuário';
+
+  function handleLogout() {
+    logout();
+    navigate('/login', { replace: true });
+  }
 
   return (
     <>
@@ -85,7 +97,15 @@ export default function Sidebar() {
         {/* User info */}
         <div className={styles.userArea}>
           <User size={20} strokeWidth={1.6} className={styles.userIcon} />
-          <span className={styles.userName}>Nome Sobrenome</span>
+          <span className={styles.userName}>{role}</span>
+          <button
+            className={styles.logoutButton}
+            onClick={handleLogout}
+            title="Sair do sistema"
+            aria-label="Sair do sistema"
+          >
+            <LogOut size={18} />
+          </button>
         </div>
 
       </aside>

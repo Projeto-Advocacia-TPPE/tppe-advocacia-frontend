@@ -1,7 +1,8 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 // Auth
 import Login from './pages/auth/Login';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 
 // Landing page components
 import Navbar           from './components/Navbar/Navbar';
@@ -24,6 +25,7 @@ import Clientes         from './pages/sistema/Clientes';
 import Agenda from './pages/sistema/Agenda/Agenda';
 import Processos from './pages/sistema/Processos/Processos';
 import Tarefas          from './pages/sistema/Tarefas';
+import Dashboard        from './pages/sistema/Dashboard/Dashboard';
 
 function LandingPage() {
   return (
@@ -54,17 +56,19 @@ export default function App() {
         <Route path="/login" element={<Login />} />
 
         {/* Sistema */}
-        <Route path="/sistema" element={<SistemaLayout />}>
-          <Route index element={<Navigate to="usuarios" replace />} />
-          <Route path="usuarios"     element={<Usuarios />} />
-          <Route path="landing-page" element={<LandingPageConfig />} />
-          <Route path="artigos"      element={<div><h1>Artigos</h1></div>} />
-          <Route path="leads"        element={<Leads />} />
-          <Route path="clientes"     element={<Clientes />} />
-          <Route path="agenda"       element={<Agenda />} />
-          <Route path="processos"    element={<Processos />} />
-          <Route path="tarefas"      element={<Tarefas />} />
-          <Route path="notificacoes" element={<Notificacoes />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path="/sistema" element={<SistemaLayout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="usuarios"     element={<Usuarios />} />
+            <Route path="landing-page" element={<LandingPageConfig />} />
+            <Route path="artigos"      element={<div><h1>Artigos</h1></div>} />
+            <Route path="leads"        element={<Leads />} />
+            <Route path="clientes"     element={<Clientes />} />
+            <Route path="agenda"       element={<Agenda />} />
+            <Route path="processos"    element={<Processos />} />
+            <Route path="tarefas"      element={<Tarefas />} />
+            <Route path="notificacoes" element={<Notificacoes />} />
+          </Route>
         </Route>
       </Routes>
     </BrowserRouter>
