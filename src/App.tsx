@@ -24,6 +24,7 @@ import Clientes         from './pages/sistema/Clientes';
 import Agenda from './pages/sistema/Agenda/Agenda';
 import Processos from './pages/sistema/Processos/Processos';
 import Tarefas          from './pages/sistema/Tarefas';
+import Artigos_          from './pages/sistema/Artigos_/Artigos';
 
 function LandingPage() {
   return (
@@ -59,7 +60,7 @@ export default function App() {
           <Route index element={<Navigate to="usuarios" replace />} />
           <Route path="usuarios"     element={<Usuarios />} />
           <Route path="landing-page" element={<LandingPageConfig />} />
-          <Route path="artigos"      element={<div><h1>Artigos</h1></div>} />
+          <Route path="artigos"      element={<Artigos_ />} />
           <Route path="leads"        element={<Leads />} />
           <Route path="clientes"     element={<Clientes />} />
           <Route path="agenda"       element={<Agenda />} />
