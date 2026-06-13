@@ -21,6 +21,10 @@
 .green { color: #247252; background: #e4f3ec; }
 .metric div > span { display: block; color: var(--gray); font-size: .73rem; line-height: 1.4; }
 .metric strong { display: block; color: var(--navy); font-size: 1.45rem; margin-top: 2px; }
+.filters { min-height: 66px; display: flex; align-items: center; gap: 9px; padding: 12px 14px; margin-bottom: 14px; border: 1px solid #e1e4e9; border-radius: 8px; background: var(--white); }
+.filterTitle { display: flex; align-items: center; gap: 7px; padding-right: 5px; color: var(--navy); font-size: .72rem; font-weight: 700; white-space: nowrap; }
+.filters select { min-width: 0; min-height: 38px; flex: 1; border: 1px solid #dfe2e8; border-radius: 6px; padding: 0 28px 0 9px; color: var(--navy); background: var(--white); font: inherit; font-size: .7rem; }
+.filters button { border: none; background: transparent; color: var(--crimson); font: inherit; font-size: .69rem; font-weight: 700; white-space: nowrap; cursor: pointer; }
 .board { display: grid; grid-template-columns: repeat(4, minmax(260px, 1fr)); gap: 14px; overflow-x: auto; padding-bottom: 12px; }
 .column { min-height: 540px; border: 1px solid #e1e4e9; border-radius: 8px; background: #f7f8fa; transition: border-color .15s, background .15s; }
 .dropActive { border-color: #91a0b4; background: #f0f3f7; }
@@ -41,6 +45,7 @@
 .cardTools { display: flex; align-items: center; gap: 4px; }
 .cardTools button { width: 25px; height: 25px; display: grid; place-items: center; border: none; border-radius: 4px; background: transparent; color: var(--gray); cursor: pointer; }
 .cardTools button:hover { color: var(--navy); background: #edf0f4; }
+.cardTools .deleteCardButton:hover { color: var(--crimson); background: #f7e9e8; }
 .grip { flex-shrink: 0; color: #a5abb5; }
 .taskCard h3 { overflow-wrap: anywhere; color: var(--navy); font-size: .78rem; line-height: 1.45; margin-bottom: 8px; }
 .description { display: -webkit-box; overflow: hidden; color: var(--gray); font-size: .68rem; line-height: 1.5; margin-bottom: 10px; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
@@ -73,6 +78,13 @@
 .cancelButton { border: 1px solid #dfe2e8; background: var(--white); color: var(--navy); }
 .submitButton { border: 1px solid var(--crimson); background: var(--crimson); color: var(--white); }
 .submitButton:disabled { opacity: .5; cursor: wait; }
+.deleteContent { display: grid; gap: 18px; }
+.deleteNotice { display: flex; align-items: flex-start; gap: 10px; padding: 14px; border: 1px solid #f0c5c2; border-radius: 7px; color: var(--crimson); background: #fdf1f0; }
+.deleteNotice svg { flex-shrink: 0; }
+.deleteNotice strong { display: block; overflow-wrap: anywhere; font-size: .78rem; margin-bottom: 5px; }
+.deleteNotice p { color: #7d4c49; font-size: .7rem; line-height: 1.5; }
+.deleteButton { min-height: 40px; display: flex; align-items: center; gap: 6px; padding: 0 15px; border: 1px solid var(--crimson); border-radius: 6px; background: var(--crimson); color: var(--white); font: inherit; font-size: .75rem; font-weight: 700; cursor: pointer; }
+.deleteButton:disabled { opacity: .5; cursor: wait; }
 .spinning { animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes shimmer { to { background-position: -200% 0; } }
@@ -86,6 +98,10 @@
   .headerActions { margin-top: 15px; flex-wrap: wrap; }
   .headerActions button { flex: 1; justify-content: center; white-space: nowrap; }
   .metrics { grid-template-columns: 1fr; }
+  .filters { align-items: stretch; flex-direction: column; }
+  .filterTitle { padding: 3px 0; }
+  .filters select { width: 100%; flex: none; }
+  .filters button { align-self: flex-start; padding: 4px 0; }
   .board { grid-template-columns: repeat(4, min(82vw, 300px)); scroll-snap-type: x mandatory; }
   .column { min-height: 480px; scroll-snap-align: start; }
   .formGrid { grid-template-columns: 1fr; }
