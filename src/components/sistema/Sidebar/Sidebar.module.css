@@ -115,11 +115,34 @@
 .userIcon { flex-shrink: 0; }
 
 .userName {
+  flex: 1;
   opacity: 1;
   transition: opacity 0.2s;
   overflow: hidden;
 }
 .collapsed .userName { opacity: 0; }
+
+.logoutButton {
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: rgba(255,255,255,.55);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.logoutButton:hover {
+  color: var(--white);
+  background: rgba(255,255,255,.08);
+}
+
+.collapsed .logoutButton {
+  display: none;
+}
 
 /* Mobile toggle */
 .mobileToggle {
