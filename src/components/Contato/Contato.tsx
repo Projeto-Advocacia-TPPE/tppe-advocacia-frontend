@@ -1,24 +1,58 @@
 import { useState } from 'react';
 import type { FormEvent, ChangeEvent } from 'react';
+import { ApiError } from '../../services/api';
+import { createLead } from '../../services/leads';
 import styles from './Contato.module.css';
 
 interface FormState {
   nome: string;
   email: string;
+  telefone: string;
   mensagem: string;
+  consentimento: boolean;
 }
 
 export default function Contato() {
-  const [form, setForm] = useState<FormState>({ nome: '', email: '', mensagem: '' });
+  const [form, setForm] = useState<FormState>({
+    nome: '',
+    email: '',
+    telefone: '',
+    mensagem: '',
+    consentimento: false,
+  });
   const [sent, setSent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    const value = e.target instanceof HTMLInputElement && e.target.type === 'checkbox'
+      ? e.target.checked
+      : e.target.value;
+    setForm(prev => ({ ...prev, [e.target.name]: value }));
+    setError('');
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setSent(true);
+    setSubmitting(true);
+    setError('');
+    try {
+      await createLead({
+        name: form.nome.trim(),
+        email: form.email.trim(),
+        phone: form.telefone.trim() || null,
+        message: form.mensagem.trim() || null,
+      });
+      setSent(true);
+    } catch (requestError) {
+      if (requestError instanceof ApiError && requestError.status === 409) {
+        setError('Já recebemos uma mensagem recente deste e-mail. Entraremos em contato em breve.');
+      } else {
+        setError('Não foi possível enviar sua mensagem agora. Tente novamente em instantes.');
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -84,6 +118,17 @@ export default function Contato() {
                   />
                 </div>
                 <div className={styles.field}>
+                  <label htmlFor="telefone">Telefone</label>
+                  <input
+                    id="telefone"
+                    name="telefone"
+                    type="tel"
+                    value={form.telefone}
+                    onChange={handleChange}
+                    placeholder="(61) 99999-9999"
+                  />
+                </div>
+                <div className={styles.field}>
                   <label htmlFor="mensagem">Mensagem</label>
                   <textarea
                     id="mensagem"
@@ -93,7 +138,27 @@ export default function Contato() {
                     required
                   />
                 </div>
-                <button type="submit" className={styles.btnEnviar}>Enviar Mensagem</button>
+                <label className={styles.consent}>
+                  <input
+                    name="consentimento"
+                    type="checkbox"
+                    checked={form.consentimento}
+                    onChange={handleChange}
+                    required
+                  />
+                  <span>
+                    Autorizo o uso dos meus dados para que o escritório entre em contato
+                    sobre esta solicitação.
+                  </span>
+                </label>
+                {error && <p className={styles.formError}>{error}</p>}
+                <button
+                  type="submit"
+                  className={styles.btnEnviar}
+                  disabled={submitting || !form.consentimento}
+                >
+                  {submitting ? 'Enviando...' : 'Enviar Mensagem'}
+                </button>
               </form>
             )}
           </div>

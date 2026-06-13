@@ -59,6 +59,28 @@
   transition: background .2s;
 }
 .btnEnviar:hover { background: var(--crimson-light); }
+.btnEnviar:disabled { cursor: not-allowed; opacity: .55; }
+
+.consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 4px 0 18px;
+  color: var(--gray);
+  font-size: .78rem;
+  line-height: 1.5;
+  cursor: pointer;
+}
+.consent input { width: 16px; height: 16px; margin-top: 2px; flex-shrink: 0; accent-color: var(--crimson); }
+.formError {
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--crimson);
+  background: #f8eceb;
+  color: var(--crimson);
+  font-size: .78rem;
+  line-height: 1.5;
+}
 
 .success {
   background: var(--navy);
