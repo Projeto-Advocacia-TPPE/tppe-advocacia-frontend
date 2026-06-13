@@ -31,6 +31,8 @@ export type ClientCreate = {
   address: string | null;
 };
 
+export type ClientUpdate = Partial<ClientCreate>;
+
 export type ClientNote = {
   id: number;
   client_id: number;
@@ -97,6 +99,18 @@ export async function createClient(payload: ClientCreate): Promise<Client> {
     body: JSON.stringify(payload),
   });
   return response.data;
+}
+
+export async function updateClient(clientId: number, payload: ClientUpdate): Promise<Client> {
+  const response = await apiRequest<SuccessResponse<Client>>(`/clients/${clientId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+  return response.data;
+}
+
+export async function anonymizeClient(clientId: number): Promise<void> {
+  await apiRequest(`/clients/${clientId}?confirm=true`, { method: 'DELETE' });
 }
 
 export async function getClientTimeline(clientId: number): Promise<ClientTimeline> {

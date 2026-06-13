@@ -10,26 +10,32 @@ import {
   Mail,
   MapPin,
   MessageSquareText,
+  Pencil,
+  Phone,
   Plus,
   RefreshCw,
   Search,
   Send,
+  ShieldAlert,
+  Trash2,
   X,
   UserRound,
   UsersRound,
 } from 'lucide-react';
 import Modal from '../../components/sistema/Modal/Modal';
-import { ApiError } from '../../services/api';
+import { ApiError, getSessionClaims } from '../../services/api';
 import {
   Client,
   ClientCreate,
   ClientListItem,
   ClientTimeline,
   ProcessStatus,
+  anonymizeClient,
   createClient,
   createClientNote,
   getClientTimeline,
   listClients,
+  updateClient,
 } from '../../services/clients';
 import styles from './Clientes.module.css';
 
@@ -113,6 +119,10 @@ function activityTitle(kind: 'movement' | 'client_note', title: string | null): 
 
 function errorMessage(error: unknown): string {
   if (error instanceof ApiError) {
+    if (error.code === 'CLIENT_HAS_ACTIVE_PROCESSES') {
+      return 'Este cliente possui processos ativos ou suspensos e não pode ser anonimizado.';
+    }
+    if (error.status === 403) return 'Somente administradores podem realizar esta operação.';
     if (error.status === 409) return 'Já existe um cliente com este CPF ou CNPJ.';
     if (error.status === 422) return 'Revise os campos informados antes de continuar.';
     return error.message;
@@ -130,6 +140,7 @@ export default function Clientes() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [form, setForm] = useState<ClientForm>(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
@@ -137,7 +148,12 @@ export default function Clientes() {
   const [timelineLoading, setTimelineLoading] = useState(false);
   const [note, setNote] = useState('');
   const [noteSubmitting, setNoteSubmitting] = useState(false);
+  const [anonymizingClient, setAnonymizingClient] = useState<Client | null>(null);
+  const [anonymizeConfirmation, setAnonymizeConfirmation] = useState('');
+  const [anonymizeSubmitting, setAnonymizeSubmitting] = useState(false);
+  const [anonymizeError, setAnonymizeError] = useState('');
   const [feedback, setFeedback] = useState<{ message: string; kind: 'success' | 'error' } | null>(null);
+  const isAdmin = getSessionClaims()?.role === 'ADMIN';
 
   const stats = useMemo(() => ({
     people: clients.filter(client => client.cpf).length,
@@ -177,9 +193,24 @@ export default function Clientes() {
   }
 
   function openCreate() {
+    setEditingClient(null);
     setForm(EMPTY_FORM);
     setFormError('');
     setShowCreate(true);
+  }
+
+  function openEdit(client: Client) {
+    const kind: ClientKind = client.cpf ? 'person' : 'company';
+    setForm({
+      kind,
+      name: client.name,
+      document: formatInputDocument(client.cpf ?? client.cnpj ?? '', kind),
+      email: client.email ?? '',
+      phone: client.phone ?? '',
+      address: client.address ?? '',
+    });
+    setFormError('');
+    setEditingClient(client);
   }
 
   function updateForm<K extends keyof ClientForm>(field: K, value: ClientForm[K]) {
@@ -190,7 +221,7 @@ export default function Clientes() {
     setForm(current => ({ ...current, kind, document: '' }));
   }
 
-  async function handleCreate(event: FormEvent<HTMLFormElement>) {
+  async function handleSaveClient(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError('');
     const document = digits(form.document);
@@ -211,16 +242,24 @@ export default function Clientes() {
 
     setSubmitting(true);
     try {
-      const created: Client = await createClient(payload);
+      const saved = editingClient
+        ? await updateClient(editingClient.id, payload)
+        : await createClient(payload);
       const response = await listClients({ page: 1, limit: 12 });
       setClients(response.data);
       setTotal(response.meta.total);
       setPages(response.meta.pages || 1);
       setShowCreate(false);
+      setEditingClient(null);
       setSearch('');
       setSearchInput('');
       setPage(1);
-      showFeedback(`${created.name} foi cadastrado com sucesso.`);
+      if (editingClient) {
+        await refreshTimeline(saved.id);
+        showFeedback('Dados do cliente atualizados com sucesso.');
+      } else {
+        showFeedback(`${saved.name} foi cadastrado com sucesso.`);
+      }
     } catch (error) {
       setFormError(errorMessage(error));
     } finally {
@@ -261,6 +300,29 @@ export default function Clientes() {
       showFeedback(errorMessage(error), 'error');
     } finally {
       setNoteSubmitting(false);
+    }
+  }
+
+  function openAnonymize(client: Client) {
+    setAnonymizingClient(client);
+    setAnonymizeConfirmation('');
+    setAnonymizeError('');
+  }
+
+  async function handleAnonymize() {
+    if (!anonymizingClient || anonymizeConfirmation !== anonymizingClient.name) return;
+    setAnonymizeSubmitting(true);
+    setAnonymizeError('');
+    try {
+      await anonymizeClient(anonymizingClient.id);
+      setAnonymizingClient(null);
+      setTimeline(null);
+      await loadClients(true);
+      showFeedback('Cliente anonimizado com sucesso. Os dados pessoais foram removidos.');
+    } catch (error) {
+      setAnonymizeError(errorMessage(error));
+    } finally {
+      setAnonymizeSubmitting(false);
     }
   }
 
@@ -378,9 +440,13 @@ export default function Clientes() {
         </footer>
       </section>
 
-      {showCreate && (
-        <Modal title="Cadastrar cliente" onClose={() => setShowCreate(false)} width={620}>
-          <form className={styles.createForm} onSubmit={handleCreate}>
+      {(showCreate || editingClient) && (
+        <Modal
+          title={editingClient ? 'Editar cliente' : 'Cadastrar cliente'}
+          onClose={() => { setShowCreate(false); setEditingClient(null); }}
+          width={620}
+        >
+          <form className={styles.createForm} onSubmit={handleSaveClient}>
             <div className={styles.kindSelector}>
               <button
                 type="button"
@@ -432,9 +498,9 @@ export default function Clientes() {
             {formError && <p className={styles.formError}>{formError}</p>}
 
             <div className={styles.formActions}>
-              <button type="button" className={styles.cancelButton} onClick={() => setShowCreate(false)}>Cancelar</button>
+              <button type="button" className={styles.cancelButton} onClick={() => { setShowCreate(false); setEditingClient(null); }}>Cancelar</button>
               <button type="submit" className={styles.submitButton} disabled={submitting}>
-                {submitting ? 'Cadastrando...' : 'Cadastrar cliente'}
+                {submitting ? 'Salvando...' : editingClient ? 'Salvar alterações' : 'Cadastrar cliente'}
               </button>
             </div>
           </form>
@@ -453,13 +519,23 @@ export default function Clientes() {
                   <span>{formatDocument(timeline.client.cpf, timeline.client.cnpj)}</span>
                 </div>
               </div>
-              <button onClick={() => setTimeline(null)} aria-label="Fechar ficha"><X size={19} /></button>
+              <div className={styles.drawerActions}>
+                <button onClick={() => openEdit(timeline.client)} title="Editar dados" aria-label="Editar dados">
+                  <Pencil size={17} />
+                </button>
+                {isAdmin && (
+                  <button className={styles.dangerIconButton} onClick={() => openAnonymize(timeline.client)} title="Anonimizar cliente" aria-label="Anonimizar cliente">
+                    <Trash2 size={17} />
+                  </button>
+                )}
+                <button onClick={() => setTimeline(null)} title="Fechar ficha" aria-label="Fechar ficha"><X size={19} /></button>
+              </div>
             </div>
 
             <div className={styles.drawerBody}>
               <section className={styles.clientSummary}>
                 <Info icon={<Mail size={15} />} label="E-mail" value={timeline.client.email ?? 'Não informado'} />
-                <Info icon={<UserRound size={15} />} label="Telefone" value={timeline.client.phone ?? 'Não informado'} />
+                <Info icon={<Phone size={15} />} label="Telefone" value={timeline.client.phone ?? 'Não informado'} />
                 <Info icon={<MapPin size={15} />} label="Endereço" value={timeline.client.address ?? 'Não informado'} />
                 <Info icon={<CalendarClock size={15} />} label="Cliente desde" value={formatDate(timeline.client.created_at)} />
               </section>
@@ -550,6 +626,37 @@ export default function Clientes() {
             </div>
           </aside>
         </div>
+      )}
+
+      {anonymizingClient && (
+        <Modal title="Anonimizar cliente pela LGPD" onClose={() => setAnonymizingClient(null)} width={520}>
+          <div className={styles.anonymizeContent}>
+            <div className={styles.dangerNotice}>
+              <ShieldAlert size={22} />
+              <div>
+                <strong>Esta ação é irreversível</strong>
+                <p>Dados pessoais e observações serão removidos. Clientes com processos ativos ou suspensos não podem ser anonimizados.</p>
+              </div>
+            </div>
+            <label className={styles.confirmField}>
+              <span>Digite <strong>{anonymizingClient.name}</strong> para confirmar</span>
+              <input value={anonymizeConfirmation} onChange={event => setAnonymizeConfirmation(event.target.value)} autoComplete="off" />
+            </label>
+            {anonymizeError && <p className={styles.formError}>{anonymizeError}</p>}
+            <div className={styles.formActions}>
+              <button type="button" className={styles.cancelButton} onClick={() => setAnonymizingClient(null)}>Cancelar</button>
+              <button
+                type="button"
+                className={styles.dangerButton}
+                onClick={() => void handleAnonymize()}
+                disabled={anonymizeSubmitting || anonymizeConfirmation !== anonymizingClient.name}
+              >
+                <Trash2 size={15} />
+                {anonymizeSubmitting ? 'Anonimizando...' : 'Anonimizar definitivamente'}
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   );
