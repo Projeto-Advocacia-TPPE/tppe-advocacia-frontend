@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 // Auth
 import Login from './pages/auth/Login';
+import ResetPassword from './pages/auth/ResetPassword';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
 // Landing page components
@@ -56,6 +57,7 @@ export default function App() {
 
         {/* Auth */}
         <Route path="/login" element={<Login />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* Sistema */}
         <Route element={<ProtectedRoute />}>
