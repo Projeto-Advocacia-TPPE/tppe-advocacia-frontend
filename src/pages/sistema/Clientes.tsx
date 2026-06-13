@@ -1,12 +1,20 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import {
   Building2,
+  BriefcaseBusiness,
+  CalendarClock,
   ChevronLeft,
   ChevronRight,
+  Clock3,
+  FileText,
   Mail,
+  MapPin,
+  MessageSquareText,
   Plus,
   RefreshCw,
   Search,
+  Send,
+  X,
   UserRound,
   UsersRound,
 } from 'lucide-react';
@@ -16,7 +24,11 @@ import {
   Client,
   ClientCreate,
   ClientListItem,
+  ClientTimeline,
+  ProcessStatus,
   createClient,
+  createClientNote,
+  getClientTimeline,
   listClients,
 } from '../../services/clients';
 import styles from './Clientes.module.css';
@@ -39,6 +51,13 @@ const EMPTY_FORM: ClientForm = {
   email: '',
   phone: '',
   address: '',
+};
+
+const STATUS_LABELS: Record<ProcessStatus, string> = {
+  ATIVO: 'Ativo',
+  SUSPENSO: 'Suspenso',
+  ARQUIVADO: 'Arquivado',
+  ENCERRADO: 'Encerrado',
 };
 
 function digits(value: string): string {
@@ -78,6 +97,20 @@ function initials(name: string): string {
     .join('');
 }
 
+function formatDate(value: string): string {
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(value));
+}
+
+function activityTitle(kind: 'movement' | 'client_note', title: string | null): string {
+  return kind === 'client_note' ? 'Observação adicionada' : title ?? 'Movimentação processual';
+}
+
 function errorMessage(error: unknown): string {
   if (error instanceof ApiError) {
     if (error.status === 409) return 'Já existe um cliente com este CPF ou CNPJ.';
@@ -100,6 +133,10 @@ export default function Clientes() {
   const [form, setForm] = useState<ClientForm>(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
+  const [timeline, setTimeline] = useState<ClientTimeline | null>(null);
+  const [timelineLoading, setTimelineLoading] = useState(false);
+  const [note, setNote] = useState('');
+  const [noteSubmitting, setNoteSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<{ message: string; kind: 'success' | 'error' } | null>(null);
 
   const stats = useMemo(() => ({
@@ -191,6 +228,42 @@ export default function Clientes() {
     }
   }
 
+  async function openTimeline(clientId: number) {
+    setTimelineLoading(true);
+    setNote('');
+    try {
+      setTimeline(await getClientTimeline(clientId));
+    } catch (error) {
+      showFeedback(errorMessage(error), 'error');
+    } finally {
+      setTimelineLoading(false);
+    }
+  }
+
+  async function refreshTimeline(clientId: number) {
+    try {
+      setTimeline(await getClientTimeline(clientId));
+    } catch (error) {
+      showFeedback(errorMessage(error), 'error');
+    }
+  }
+
+  async function handleCreateNote(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!timeline || !note.trim()) return;
+    setNoteSubmitting(true);
+    try {
+      await createClientNote(timeline.client.id, note.trim());
+      setNote('');
+      await refreshTimeline(timeline.client.id);
+      showFeedback('Observação registrada no histórico do cliente.');
+    } catch (error) {
+      showFeedback(errorMessage(error), 'error');
+    } finally {
+      setNoteSubmitting(false);
+    }
+  }
+
   return (
     <div className={styles.page}>
       {feedback && (
@@ -254,10 +327,11 @@ export default function Clientes() {
                 <th>Tipo</th>
                 <th>Documento</th>
                 <th>Telefone</th>
+                <th>Ação</th>
               </tr>
             </thead>
             <tbody>
-              {loading && <tr><td colSpan={4} className={styles.empty}>Carregando clientes...</td></tr>}
+              {loading && <tr><td colSpan={5} className={styles.empty}>Carregando clientes...</td></tr>}
               {!loading && clients.map(client => (
                 <tr key={client.id}>
                   <td>
@@ -276,10 +350,15 @@ export default function Clientes() {
                   </td>
                   <td>{formatDocument(client.cpf, client.cnpj)}</td>
                   <td>{client.phone ?? 'Não informado'}</td>
+                  <td>
+                    <button className={styles.openButton} onClick={() => void openTimeline(client.id)} disabled={timelineLoading}>
+                      Ver ficha 360
+                    </button>
+                  </td>
                 </tr>
               ))}
               {!loading && clients.length === 0 && (
-                <tr><td colSpan={4} className={styles.empty}>Nenhum cliente encontrado.</td></tr>
+                <tr><td colSpan={5} className={styles.empty}>Nenhum cliente encontrado.</td></tr>
               )}
             </tbody>
           </table>
@@ -361,6 +440,117 @@ export default function Clientes() {
           </form>
         </Modal>
       )}
+
+      {timeline && (
+        <div className={styles.overlay} onClick={() => setTimeline(null)}>
+          <aside className={styles.drawer} onClick={event => event.stopPropagation()}>
+            <div className={styles.drawerHeader}>
+              <div className={styles.drawerIdentity}>
+                <span className={styles.drawerAvatar}>{initials(timeline.client.name)}</span>
+                <div>
+                  <p className={styles.eyebrow}>Ficha 360 do cliente</p>
+                  <h2>{timeline.client.name}</h2>
+                  <span>{formatDocument(timeline.client.cpf, timeline.client.cnpj)}</span>
+                </div>
+              </div>
+              <button onClick={() => setTimeline(null)} aria-label="Fechar ficha"><X size={19} /></button>
+            </div>
+
+            <div className={styles.drawerBody}>
+              <section className={styles.clientSummary}>
+                <Info icon={<Mail size={15} />} label="E-mail" value={timeline.client.email ?? 'Não informado'} />
+                <Info icon={<UserRound size={15} />} label="Telefone" value={timeline.client.phone ?? 'Não informado'} />
+                <Info icon={<MapPin size={15} />} label="Endereço" value={timeline.client.address ?? 'Não informado'} />
+                <Info icon={<CalendarClock size={15} />} label="Cliente desde" value={formatDate(timeline.client.created_at)} />
+              </section>
+
+              <section className={styles.drawerSection}>
+                <div className={styles.sectionHeading}>
+                  <div>
+                    <BriefcaseBusiness size={17} />
+                    <h3>Processos vinculados</h3>
+                  </div>
+                  <span>{timeline.processes.length}</span>
+                </div>
+                <div className={styles.processList}>
+                  {timeline.processes.map(process => (
+                    <article className={styles.processItem} key={process.id}>
+                      <div className={styles.processTopline}>
+                        <strong>{process.number}</strong>
+                        <span className={`${styles.processStatus} ${styles[`status${process.status}`]}`}>
+                          {STATUS_LABELS[process.status]}
+                        </span>
+                      </div>
+                      <p>{process.action_type} · {process.court}</p>
+                      <div className={styles.lastMovement}>
+                        <Clock3 size={13} />
+                        {process.last_movement
+                          ? `${process.last_movement.title} · ${formatDate(process.last_movement.occurred_at)}`
+                          : 'Nenhuma movimentação registrada'}
+                      </div>
+                    </article>
+                  ))}
+                  {timeline.processes.length === 0 && <p className={styles.sectionEmpty}>Nenhum processo vinculado.</p>}
+                </div>
+              </section>
+
+              <section className={styles.drawerSection}>
+                <div className={styles.sectionHeading}>
+                  <div>
+                    <MessageSquareText size={17} />
+                    <h3>Observações</h3>
+                  </div>
+                  <span>{timeline.notes.length}</span>
+                </div>
+                <form className={styles.noteForm} onSubmit={handleCreateNote}>
+                  <textarea
+                    rows={3}
+                    maxLength={5000}
+                    value={note}
+                    onChange={event => setNote(event.target.value)}
+                    placeholder="Registre uma informação relevante sobre este cliente"
+                  />
+                  <button type="submit" disabled={noteSubmitting || !note.trim()}>
+                    <Send size={15} />
+                    {noteSubmitting ? 'Registrando...' : 'Registrar'}
+                  </button>
+                </form>
+                <div className={styles.noteList}>
+                  {timeline.notes.map(item => (
+                    <article className={styles.noteItem} key={item.id}>
+                      <p>{item.content}</p>
+                      <span>{item.created_by_name} · {formatDate(item.created_at)}</span>
+                    </article>
+                  ))}
+                  {timeline.notes.length === 0 && <p className={styles.sectionEmpty}>Nenhuma observação registrada.</p>}
+                </div>
+              </section>
+
+              <section className={styles.drawerSection}>
+                <div className={styles.sectionHeading}>
+                  <div>
+                    <FileText size={17} />
+                    <h3>Atividades recentes</h3>
+                  </div>
+                </div>
+                <div className={styles.activityList}>
+                  {timeline.recent_activity.map((activity, index) => (
+                    <article className={styles.activityItem} key={`${activity.kind}-${activity.note_id ?? activity.process_id}-${index}`}>
+                      <span className={styles.activityDot} />
+                      <div>
+                        <strong>{activityTitle(activity.kind, activity.title)}</strong>
+                        {activity.content && <p>{activity.content}</p>}
+                        <span>{activity.actor_name ?? 'Sistema'} · {formatDate(activity.occurred_at)}</span>
+                      </div>
+                    </article>
+                  ))}
+                  {timeline.recent_activity.length === 0 && <p className={styles.sectionEmpty}>Nenhuma atividade recente.</p>}
+                </div>
+              </section>
+            </div>
+          </aside>
+        </div>
+      )}
     </div>
   );
 }
@@ -376,6 +566,18 @@ function Metric({ icon, label, value, tone }: {
       <span className={`${styles.metricIcon} ${styles[tone]}`}>{icon}</span>
       <div>
         <span>{label}</span>
+        <strong>{value}</strong>
+      </div>
+    </div>
+  );
+}
+
+function Info({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return (
+    <div className={styles.infoItem}>
+      <span>{icon}</span>
+      <div>
+        <small>{label}</small>
         <strong>{value}</strong>
       </div>
     </div>

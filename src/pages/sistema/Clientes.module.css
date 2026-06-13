@@ -42,6 +42,8 @@
 .kindBadge { display: inline-flex; padding: 4px 7px; border-radius: 5px; font-size: .67rem; font-weight: 700; white-space: nowrap; }
 .personBadge { color: #315e96; background: #e7f0fa; }
 .companyBadge { color: #94620b; background: #fff1ce; }
+.openButton { border: none; background: transparent; color: var(--crimson); font: inherit; font-size: .74rem; font-weight: 700; cursor: pointer; }
+.openButton:disabled { opacity: .5; cursor: wait; }
 .empty { padding: 40px !important; text-align: center; color: var(--gray) !important; }
 .footer { min-height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 20px; color: var(--gray); font-size: .75rem; }
 .footer strong { color: var(--navy); }
@@ -64,6 +66,52 @@
 .cancelButton { border: 1px solid #dfe2e8; background: var(--white); color: var(--navy); }
 .submitButton { border: 1px solid var(--crimson); background: var(--crimson); color: var(--white); }
 .submitButton:disabled { cursor: wait; opacity: .6; }
+.overlay { position: fixed; inset: 0; z-index: 500; display: flex; justify-content: flex-end; background: rgba(0,0,0,.45); }
+.drawer { width: min(720px, 100%); height: 100%; overflow-y: auto; background: #f7f8fa; box-shadow: -12px 0 40px rgba(0,0,0,.16); }
+.drawerHeader { position: sticky; top: 0; z-index: 2; min-height: 104px; display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 22px 24px; border-bottom: 1px solid #e1e4e9; background: var(--white); }
+.drawerHeader > button { border: none; background: transparent; color: var(--gray); cursor: pointer; }
+.drawerIdentity { display: flex; align-items: center; gap: 13px; min-width: 0; }
+.drawerAvatar { width: 46px; height: 46px; display: grid; place-items: center; flex-shrink: 0; border-radius: 50%; background: var(--navy); color: var(--white); font-size: .8rem; font-weight: 700; }
+.drawerIdentity h2 { overflow-wrap: anywhere; color: var(--navy); font-size: 1.15rem; margin-bottom: 3px; }
+.drawerIdentity div > span { color: var(--gray); font-size: .7rem; }
+.drawerBody { display: grid; gap: 16px; padding: 18px; }
+.clientSummary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; overflow: hidden; border: 1px solid #e4e7ed; border-radius: 8px; background: #e4e7ed; }
+.infoItem { min-width: 0; display: flex; align-items: flex-start; gap: 9px; padding: 14px; background: var(--white); }
+.infoItem > span { color: var(--crimson); flex-shrink: 0; }
+.infoItem small, .infoItem strong { display: block; }
+.infoItem small { color: var(--gray); font-size: .64rem; text-transform: uppercase; margin-bottom: 4px; }
+.infoItem strong { overflow-wrap: anywhere; color: var(--navy); font-size: .73rem; line-height: 1.45; }
+.drawerSection { padding: 18px; border: 1px solid #e4e7ed; border-radius: 8px; background: var(--white); }
+.sectionHeading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 15px; }
+.sectionHeading > div { display: flex; align-items: center; gap: 7px; color: var(--crimson); }
+.sectionHeading h3 { color: var(--navy); font-size: .88rem; }
+.sectionHeading > span { min-width: 24px; height: 24px; display: grid; place-items: center; padding: 0 6px; border-radius: 5px; color: var(--navy); background: #edf0f4; font-size: .67rem; font-weight: 700; }
+.processList, .noteList, .activityList { display: grid; gap: 9px; }
+.processItem { padding: 13px; border: 1px solid #e7e9ed; border-radius: 7px; background: #fafbfc; }
+.processTopline { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 5px; }
+.processTopline strong { color: var(--navy); font-size: .76rem; overflow-wrap: anywhere; }
+.processStatus { flex-shrink: 0; padding: 3px 6px; border-radius: 4px; font-size: .61rem; font-weight: 700; text-transform: uppercase; }
+.statusATIVO { color: #247252; background: #e4f3ec; }
+.statusSUSPENSO { color: #94620b; background: #fff1ce; }
+.statusARQUIVADO { color: #6d7078; background: #eff0f2; }
+.statusENCERRADO { color: #315e96; background: #e7f0fa; }
+.processItem > p { color: var(--gray); font-size: .7rem; margin-bottom: 9px; }
+.lastMovement { display: flex; align-items: flex-start; gap: 6px; color: #6d7078; font-size: .66rem; line-height: 1.45; }
+.lastMovement svg { flex-shrink: 0; margin-top: 1px; }
+.noteForm { display: grid; justify-items: end; gap: 8px; margin-bottom: 13px; }
+.noteForm textarea { width: 100%; resize: vertical; min-height: 76px; border: 1px solid #dfe2e8; border-radius: 6px; padding: 10px; outline: none; color: var(--navy); font: inherit; font-size: .75rem; }
+.noteForm textarea:focus { border-color: #9aa8ba; box-shadow: 0 0 0 3px rgba(38,56,89,.08); }
+.noteForm button { min-height: 34px; display: flex; align-items: center; gap: 6px; border: 1px solid var(--navy); border-radius: 6px; padding: 0 11px; background: var(--navy); color: var(--white); font: inherit; font-size: .7rem; font-weight: 700; cursor: pointer; }
+.noteForm button:disabled { opacity: .45; cursor: default; }
+.noteItem { padding: 11px 12px; border-left: 3px solid #c8d0dc; background: #f7f8fa; }
+.noteItem p { color: var(--text); font-size: .73rem; line-height: 1.5; white-space: pre-wrap; margin-bottom: 7px; }
+.noteItem span, .activityItem div > span { color: var(--gray); font-size: .62rem; }
+.activityItem { position: relative; display: grid; grid-template-columns: 12px minmax(0, 1fr); gap: 8px; padding-bottom: 12px; }
+.activityItem:not(:last-child)::before { content: ''; position: absolute; left: 5px; top: 11px; bottom: -3px; width: 1px; background: #dfe3e9; }
+.activityDot { width: 11px; height: 11px; margin-top: 2px; border: 3px solid #e9edf3; border-radius: 50%; background: var(--crimson); z-index: 1; }
+.activityItem strong { display: block; color: var(--navy); font-size: .72rem; margin-bottom: 4px; }
+.activityItem p { color: var(--gray); font-size: .68rem; line-height: 1.5; margin-bottom: 5px; white-space: pre-wrap; }
+.sectionEmpty { padding: 16px; color: var(--gray); background: #f7f8fa; border-radius: 6px; text-align: center; font-size: .7rem; }
 .spinning { animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -82,4 +130,7 @@
   .formGrid { grid-template-columns: 1fr; }
   .fullField { grid-column: auto; }
   .kindSelector { grid-template-columns: 1fr; }
+  .clientSummary { grid-template-columns: 1fr; }
+  .drawerBody { padding: 12px; }
+  .drawerSection { padding: 14px; }
 }
