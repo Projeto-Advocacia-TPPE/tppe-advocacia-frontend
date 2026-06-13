@@ -35,47 +35,88 @@ interface Props {
   onVoltar: () => void;
   onSalvar: (artigo: Omit<Artigo, 'id' | 'data' | 'ultimaEdicao'>) => void;
   inicial?: Partial<Artigo>;
+  saving?: boolean;
   modo?: 'criar' | 'editar';
 }
 
-export default function CriarArtigo({ onVoltar, onSalvar, inicial, modo = 'criar' }: Props) {
-  const [titulo, setTitulo]           = useState(inicial?.titulo   ?? '');
-  const [categoria, setCategoria]     = useState(inicial?.categoria ?? CATEGORIAS[0]);
-  const [status, setStatus]           = useState<Status>(inicial?.status ?? 'RASCUNHO');
-  const [resumo, setResumo]           = useState(inicial?.resumo   ?? '');
-  const [capa, setCapa]               = useState<string | undefined>(inicial?.imagem);
-  const [alterado, setAlterado]       = useState(false);
-  const [catOpen, setCatOpen]         = useState(false);
-  const [wordCount, setWordCount]     = useState(0);
-  const [preview, setPreview]         = useState(false);
+export default function CriarArtigo({ onVoltar, onSalvar, inicial, saving = false, modo = 'criar' }: Props) {
+  const [titulo, setTitulo]             = useState(inicial?.titulo   ?? '');
+  const [categoria, setCategoria]       = useState(inicial?.categoria ?? CATEGORIAS[0]);
+  const [status, setStatus]             = useState<Status>(inicial?.status ?? 'RASCUNHO');
+  const [resumo, setResumo]             = useState(inicial?.resumo   ?? '');
+  const [capa, setCapa]                 = useState<string | undefined>(inicial?.imagem);
+  const [catOpen, setCatOpen]           = useState(false);
+  const [wordCount, setWordCount]       = useState(0);
+  const [preview, setPreview]           = useState(false);
+  const [autoSaveMsg, setAutoSaveMsg]   = useState<'saving' | 'saved' | null>(null);
 
-  const [capaPos, setCapaPos]         = useState({ x: 50, y: 50 }); // percent
-  const dragRef   = useRef<{ startX: number; startY: number; posX: number; posY: number } | null>(null);
+  // conteudo em ref para sempre ter o valor mais recente sem problema de closure
+  const conteudoRef = useRef<string>(inicial?.conteudo ?? '');
+
+  const [capaPos, setCapaPos] = useState({ x: 50, y: 50 });
+  const dragRef    = useRef<{ startX: number; startY: number; posX: number; posY: number } | null>(null);
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const editorRef  = useRef<HTMLDivElement>(null);
   const capaRef    = useRef<HTMLInputElement>(null);
   const capaImgRef = useRef<HTMLDivElement>(null);
 
-  /* word count */
+  /* ── Restaura o editor sempre que preview fecha ── */
+  useEffect(() => {
+    if (preview) return; // editor não existe enquanto preview está aberto
+    if (!editorRef.current) return;
+    const html = conteudoRef.current;
+    if (html) {
+      editorRef.current.innerHTML = html;
+      editorRef.current.classList.remove(styles.editorPlaceholder);
+    } else {
+      editorRef.current.innerText = PLACEHOLDER;
+      editorRef.current.classList.add(styles.editorPlaceholder);
+    }
+  }, [preview]); // roda quando preview muda (abre/fecha)
+
+  /* ── Autosave com debounce de 2s ── */
+  function scheduleAutoSave() {
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    setAutoSaveMsg('saving');
+    autoSaveTimer.current = setTimeout(() => {
+      onSalvar({
+        titulo,
+        autor: inicial?.autor ?? '',
+        categoria,
+        status,
+        resumo,
+        imagem: capa,
+        conteudo: conteudoRef.current,
+      });
+      setAutoSaveMsg('saved');
+      setTimeout(() => setAutoSaveMsg(null), 2000);
+    }, 2000);
+  }
+
+  /* ── Word count + salva ref + dispara autosave ── */
   const updateWordCount = useCallback(() => {
+    const html = editorRef.current?.innerHTML ?? '';
     const text = editorRef.current?.innerText ?? '';
     const words = text.trim().split(/\s+/).filter(Boolean).length;
+    conteudoRef.current = html; // sempre atualiza a ref
     setWordCount(words);
-    setAlterado(true);
-  }, []);
+    scheduleAutoSave();
+  }, [titulo, categoria, status, resumo, capa, inicial?.autor, onSalvar]);
 
-  /* toolbar commands */
+  /* ── Toolbar commands ── */
   function cmd(command: string, value?: string) {
     document.execCommand(command, false, value);
     editorRef.current?.focus();
     updateWordCount();
   }
 
+  /* ── Capa ── */
   function handleCapaChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = ev => { setCapa(ev.target?.result as string); setAlterado(true); };
+    reader.onload = ev => { setCapa(ev.target?.result as string); scheduleAutoSave(); };
     reader.readAsDataURL(file);
   }
 
@@ -103,20 +144,21 @@ export default function CriarArtigo({ onVoltar, onSalvar, inicial, modo = 'criar
     window.removeEventListener('mouseup', handleCapaDragEnd);
   }
 
+  /* ── Salvar manual ── */
   function handleSalvar() {
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     onSalvar({
       titulo,
-      autor: '',
+      autor: inicial?.autor ?? '',
       categoria,
       status,
       resumo,
       imagem: capa,
-      conteudo: editorRef.current?.innerHTML ?? '',
+      conteudo: conteudoRef.current,
     });
-    setAlterado(false);
   }
 
-  /* placeholder behaviour */
+  /* ── Placeholder ── */
   const PLACEHOLDER = 'Comece escrevendo o seu artigo aqui...';
   function handleEditorFocus() {
     if (editorRef.current?.innerText === PLACEHOLDER) {
@@ -130,19 +172,14 @@ export default function CriarArtigo({ onVoltar, onSalvar, inicial, modo = 'criar
       editorRef.current!.classList.add(styles.editorPlaceholder);
     }
   }
+
+  /* ── Autosave ao mudar título, resumo, categoria, status ── */
   useEffect(() => {
-    if (editorRef.current && !inicial?.conteudo) {
-      editorRef.current.innerText = PLACEHOLDER;
-      editorRef.current.classList.add(styles.editorPlaceholder);
-    } else if (editorRef.current && inicial?.conteudo) {
-      editorRef.current.innerHTML = inicial.conteudo;
-    }
-  }, []);
+    if (!titulo && !resumo) return;
+    scheduleAutoSave();
+  }, [titulo, resumo, categoria, status]);
 
-  /* mark dirty on title / resumo changes */
-  useEffect(() => { if (titulo || resumo) setAlterado(true); }, [titulo, resumo]);
-
-  /* ── Build artigo snapshot for preview ── */
+  /* ── Snapshot para preview ── */
   function buildSnapshot() {
     return {
       id: 0,
@@ -155,16 +192,27 @@ export default function CriarArtigo({ onVoltar, onSalvar, inicial, modo = 'criar
       imagemPos: capaPos,
       data: inicial?.data ?? new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }),
       ultimaEdicao: 'Agora',
-      conteudo: editorRef.current?.innerHTML ?? '',
+      conteudo: conteudoRef.current,
     };
   }
 
+  /* ── Preview ── */
   if (preview) {
     return (
       <VisualizarArtigo
         artigo={buildSnapshot()}
         onVoltar={() => setPreview(false)}
-        onPublicar={() => { setStatus('PUBLICADO'); setPreview(false); }}
+        onPublicar={() => {
+          onSalvar({
+            titulo,
+            autor: inicial?.autor ?? '',
+            categoria,
+            status: 'PUBLICADO',
+            resumo,
+            imagem: capa,
+            conteudo: conteudoRef.current,
+          });
+        }}
       />
     );
   }
@@ -184,7 +232,6 @@ export default function CriarArtigo({ onVoltar, onSalvar, inicial, modo = 'criar
 
       {/* ── Meta row ── */}
       <div className={styles.metaRow}>
-        {/* Left: título + categoria + status */}
         <div className={styles.metaLeft}>
           <div className={styles.fieldGroup}>
             <label className={styles.fieldLabel}>TÍTULO DO ARTIGO</label>
@@ -196,13 +243,8 @@ export default function CriarArtigo({ onVoltar, onSalvar, inicial, modo = 'criar
             />
           </div>
           <div className={styles.metaControls}>
-            {/* Categoria dropdown */}
             <div className={styles.selectWrap}>
-              <button
-                className={styles.selectBtn}
-                onClick={() => setCatOpen(o => !o)}
-                type="button"
-              >
+              <button className={styles.selectBtn} onClick={() => setCatOpen(o => !o)} type="button">
                 {categoria} <ChevronDown size={14} />
               </button>
               {catOpen && (
@@ -210,7 +252,7 @@ export default function CriarArtigo({ onVoltar, onSalvar, inicial, modo = 'criar
                   {CATEGORIAS.map(c => (
                     <li key={c}
                       className={`${styles.selectOption} ${c === categoria ? styles.selectOptionActive : ''}`}
-                      onClick={() => { setCategoria(c); setCatOpen(false); setAlterado(true); }}
+                      onClick={() => { setCategoria(c); setCatOpen(false); }}
                     >
                       {c}
                     </li>
@@ -218,11 +260,9 @@ export default function CriarArtigo({ onVoltar, onSalvar, inicial, modo = 'criar
                 </ul>
               )}
             </div>
-
-            {/* Status toggle */}
             <button
               className={`${styles.toggleBtn} ${status === 'PUBLICADO' ? styles.toggleOn : ''}`}
-              onClick={() => { setStatus(s => s === 'PUBLICADO' ? 'RASCUNHO' : 'PUBLICADO'); setAlterado(true); }}
+              onClick={() => setStatus(s => s === 'PUBLICADO' ? 'RASCUNHO' : 'PUBLICADO')}
               type="button"
             >
               <span className={styles.toggleThumb} />
@@ -233,7 +273,6 @@ export default function CriarArtigo({ onVoltar, onSalvar, inicial, modo = 'criar
           </div>
         </div>
 
-        {/* Right: resumo */}
         <div className={styles.metaRight}>
           <label className={styles.fieldLabel}>RESUMO DO ARTIGO</label>
           <textarea
@@ -257,55 +296,37 @@ export default function CriarArtigo({ onVoltar, onSalvar, inicial, modo = 'criar
               Carregar Imagem
             </button>
           </div>
-          <input ref={capaRef} type="file" accept="image/*"
-            style={{ display: 'none' }} onChange={handleCapaChange} />
+          <input ref={capaRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleCapaChange} />
         </div>
       ) : (
         <div className={styles.capaPreview} ref={capaImgRef}>
           <img
-            src={capa}
-            alt="Capa"
-            className={styles.capaImg}
+            src={capa} alt="Capa" className={styles.capaImg}
             style={{ objectPosition: `${capaPos.x}% ${capaPos.y}%` }}
-            onMouseDown={handleCapaMouseDown}
-            draggable={false}
+            onMouseDown={handleCapaMouseDown} draggable={false}
           />
           <div className={styles.capaHint}>
             <span className={styles.capaHintIcon}>↕ ↔</span> Arraste para reposicionar
           </div>
           <div className={styles.capaActions}>
-            <button className={styles.capaActionBtn} type="button"
-              onClick={() => capaRef.current?.click()} title="Trocar imagem">
-              Trocar
-            </button>
-            <button className={styles.capaActionBtn + ' ' + styles.capaActionDanger} type="button"
-              onClick={() => { setCapa(undefined); setCapaPos({ x: 50, y: 50 }); setAlterado(true); }} title="Remover imagem">
+            <button className={styles.capaActionBtn} type="button" onClick={() => capaRef.current?.click()}>Trocar</button>
+            <button className={`${styles.capaActionBtn} ${styles.capaActionDanger}`} type="button"
+              onClick={() => { setCapa(undefined); setCapaPos({ x: 50, y: 50 }); }}>
               Remover
             </button>
           </div>
-          <input ref={capaRef} type="file" accept="image/*"
-            style={{ display: 'none' }} onChange={handleCapaChange} />
+          <input ref={capaRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleCapaChange} />
         </div>
       )}
 
       {/* ── Editor ── */}
       <div className={styles.editorCard}>
-        {/* Toolbar */}
         <div className={styles.toolbar}>
-          {/* Headings */}
           <div className={styles.toolbarGroup}>
-            <ToolBtn title="Parágrafo" onClick={() => cmd('formatBlock', 'p')}>
-              <span className={styles.headingBtn}>¶</span>
-            </ToolBtn>
-            <ToolBtn title="Título (H1)" onClick={() => cmd('formatBlock', 'h1')}>
-              <span className={styles.headingBtn}>H1</span>
-            </ToolBtn>
-            <ToolBtn title="Subtítulo (H2)" onClick={() => cmd('formatBlock', 'h2')}>
-              <span className={styles.headingBtn}>H2</span>
-            </ToolBtn>
-            <ToolBtn title="Subtítulo menor (H3)" onClick={() => cmd('formatBlock', 'h3')}>
-              <span className={styles.headingBtn}>H3</span>
-            </ToolBtn>
+            <ToolBtn title="Parágrafo" onClick={() => cmd('formatBlock', 'p')}><span className={styles.headingBtn}>¶</span></ToolBtn>
+            <ToolBtn title="Título (H1)" onClick={() => cmd('formatBlock', 'h1')}><span className={styles.headingBtn}>H1</span></ToolBtn>
+            <ToolBtn title="Subtítulo (H2)" onClick={() => cmd('formatBlock', 'h2')}><span className={styles.headingBtn}>H2</span></ToolBtn>
+            <ToolBtn title="Subtítulo menor (H3)" onClick={() => cmd('formatBlock', 'h3')}><span className={styles.headingBtn}>H3</span></ToolBtn>
           </div>
           <div className={styles.toolbarDivider} />
           <div className={styles.toolbarGroup}>
@@ -335,7 +356,6 @@ export default function CriarArtigo({ onVoltar, onSalvar, inicial, modo = 'criar
           <span className={styles.wordCount}>{wordCount} PALAVRAS</span>
         </div>
 
-        {/* Contenteditable area */}
         <div
           ref={editorRef}
           className={styles.editor}
@@ -350,18 +370,22 @@ export default function CriarArtigo({ onVoltar, onSalvar, inicial, modo = 'criar
       {/* ── Bottom action bar ── */}
       <div className={styles.actionBar}>
         <div className={styles.actionLeft}>
-          {alterado && (
-            <span className={styles.unsaved}>
-              <span className={styles.dot} /> Alterações não salvas detectadas...
-            </span>
+          {autoSaveMsg === 'saving' && (
+            <span className={styles.unsaved}><span className={styles.dot} /> Salvando automaticamente...</span>
+          )}
+          {autoSaveMsg === 'saved' && (
+            <span className={styles.unsaved} style={{ color: '#2ecc71' }}><span className={styles.dot} style={{ background: '#2ecc71' }} /> Salvo automaticamente</span>
+          )}
+          {!autoSaveMsg && saving && (
+            <span className={styles.unsaved}><span className={styles.dot} /> Salvando...</span>
           )}
         </div>
         <div className={styles.actionRight}>
           <button className={styles.btnPreview} type="button" onClick={() => setPreview(true)}>
             <Eye size={15} /> Visualizar Preview
           </button>
-          <button className={styles.btnSalvar} type="button" onClick={handleSalvar}>
-            <Save size={15} /> Salvar Artigo
+          <button className={styles.btnSalvar} type="button" onClick={handleSalvar} disabled={saving}>
+            <Save size={15} /> {saving ? 'Salvando...' : 'Salvar Artigo'}
           </button>
         </div>
       </div>
