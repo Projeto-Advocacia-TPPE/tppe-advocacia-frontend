@@ -11,13 +11,23 @@ import {
   ChevronRight,
   CloudDownload,
   ExternalLink,
+  Pencil,
   Plus,
   RefreshCw,
   Scale,
   Search,
+  Trash2,
   X,
 } from 'lucide-react';
 import { ApiError } from '../../../services/api';
+import {
+  createProcessDeadline,
+  Deadline,
+  DeadlineWrite,
+  deleteDeadline,
+  listProcessDeadlines,
+  updateDeadline,
+} from '../../../services/deadlines';
 import {
   changeProcessStatus,
   ClientListItem,
@@ -86,6 +96,41 @@ function formatDate(value: string): string {
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date(value));
+}
+
+function formatDateOnly(value: string): string {
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date(`${value}T12:00:00`));
+}
+
+function todayInputValue(): string {
+  const today = new Date();
+  const local = new Date(today.getTime() - today.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 10);
+}
+
+function deadlineState(dueDate: string): 'expired' | 'today' | 'approaching' | 'open' {
+  const today = todayInputValue();
+  if (dueDate < today) return 'expired';
+  if (dueDate === today) return 'today';
+  const difference = Math.round(
+    (new Date(`${dueDate}T12:00:00`).getTime() - new Date(`${today}T12:00:00`).getTime())
+    / 86_400_000,
+  );
+  return difference <= 7 ? 'approaching' : 'open';
+}
+
+function deadlineStateLabel(state: ReturnType<typeof deadlineState>): string {
+  const labels = {
+    expired: 'Vencido',
+    today: 'Vence hoje',
+    approaching: 'Próximo',
+    open: 'Em aberto',
+  };
+  return labels[state];
 }
 
 function errorMessage(error: unknown): string {
@@ -256,6 +301,164 @@ function CreateProcessModal({
   );
 }
 
+function DeadlineFormModal({
+  process,
+  deadline,
+  onCancel,
+  onChanged,
+}: {
+  process: ProcessDetail;
+  deadline: Deadline | null;
+  onCancel: () => void;
+  onChanged: (message: string) => void;
+}) {
+  const [form, setForm] = useState<DeadlineWrite>({
+    start_date: deadline?.start_date ?? todayInputValue(),
+    business_days: deadline?.business_days ?? 5,
+    deadline_type: deadline?.deadline_type ?? '',
+    comarca: deadline?.comarca ?? '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [error, setError] = useState('');
+
+  function update<K extends keyof DeadlineWrite>(field: K, value: DeadlineWrite[K]) {
+    setForm(current => ({ ...current, [field]: value }));
+    setError('');
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    setError('');
+    try {
+      const payload = {
+        ...form,
+        deadline_type: form.deadline_type.trim(),
+        comarca: form.comarca?.trim() || null,
+      };
+      const saved = deadline
+        ? await updateDeadline(deadline.id, payload)
+        : await createProcessDeadline(process.id, payload);
+      onChanged(
+        deadline
+          ? `Prazo de ${saved.deadline_type} atualizado e recalculado.`
+          : `Prazo de ${saved.deadline_type} cadastrado para ${formatDateOnly(saved.due_date)}.`,
+      );
+    } catch (requestError) {
+      setError(errorMessage(requestError));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!deadline) return;
+    setDeleting(true);
+    setError('');
+    try {
+      await deleteDeadline(deadline.id);
+      onChanged(`Prazo de ${deadline.deadline_type} excluído.`);
+    } catch (requestError) {
+      setError(errorMessage(requestError));
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  const valid = form.deadline_type.trim().length > 0
+    && form.start_date
+    && form.business_days >= 1
+    && form.business_days <= 3650;
+
+  return (
+    <div className={styles.overlay} onClick={event => { event.stopPropagation(); onCancel(); }}>
+      <div className={styles.modal} onClick={event => event.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <div>
+            <p className={styles.modalEyebrow}>Prazo processual</p>
+            <h2 className={styles.modalTitle}>{deadline ? 'Editar prazo' : 'Adicionar prazo'}</h2>
+            <p className={styles.modalSub}>{process.number} · {process.court}</p>
+          </div>
+          <button className={styles.modalClose} onClick={onCancel} aria-label="Fechar">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className={styles.modalBody}>
+          {error && <p className={styles.formError}>{error}</p>}
+          <div className={styles.mField}>
+            <label className={styles.mLabel}>Providência / tipo do prazo</label>
+            <input
+              className={styles.mInput}
+              value={form.deadline_type}
+              onChange={event => update('deadline_type', event.target.value)}
+              placeholder="Ex: Contestação, réplica ou recurso"
+              maxLength={120}
+            />
+          </div>
+          <div className={styles.mRow}>
+            <div className={styles.mField}>
+              <label className={styles.mLabel}>Data inicial</label>
+              <input className={styles.mInput} type="date" value={form.start_date} onChange={event => update('start_date', event.target.value)} />
+            </div>
+            <div className={styles.mField}>
+              <label className={styles.mLabel}>Quantidade de dias úteis</label>
+              <input
+                className={styles.mInput}
+                type="number"
+                min={1}
+                max={3650}
+                value={form.business_days}
+                onChange={event => update('business_days', Number(event.target.value))}
+              />
+            </div>
+          </div>
+          <div className={styles.mField}>
+            <label className={styles.mLabel}>Comarca</label>
+            <input
+              className={styles.mInput}
+              value={form.comarca ?? ''}
+              onChange={event => update('comarca', event.target.value)}
+              placeholder="Ex: Brasília"
+              maxLength={120}
+            />
+            <small className={styles.fieldHint}>O tribunal {process.court} será usado automaticamente no cálculo.</small>
+          </div>
+          {deadline && (
+            <div className={styles.currentDeadline}>
+              <span>Data-limite atual</span>
+              <strong>{formatDateOnly(deadline.due_date)}</strong>
+            </div>
+          )}
+          {confirmDelete && (
+            <p className={styles.deleteConfirm}>Confirme novamente para excluir definitivamente este prazo.</p>
+          )}
+        </div>
+
+        <div className={styles.modalFooter}>
+          {deadline ? (
+            <button
+              className={styles.btnDelete}
+              onClick={() => confirmDelete ? void handleDelete() : setConfirmDelete(true)}
+              disabled={deleting}
+            >
+              <Trash2 size={15} />
+              {deleting ? 'Excluindo...' : confirmDelete ? 'Confirmar exclusão' : 'Excluir prazo'}
+            </button>
+          ) : <span />}
+          <div className={styles.modalFooterRight}>
+            <button className={styles.btnCancel} onClick={onCancel}>Cancelar</button>
+            <button className={styles.btnSave} onClick={() => void handleSave()} disabled={!valid || saving}>
+              {saving ? 'Salvando...' : deadline ? 'Salvar e recalcular' : 'Calcular e salvar prazo'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ProcessDetailsModal({
   processId,
   onCancel,
@@ -267,22 +470,26 @@ function ProcessDetailsModal({
 }) {
   const [process, setProcess] = useState<ProcessDetail | null>(null);
   const [movements, setMovements] = useState<Movement[]>([]);
+  const [deadlines, setDeadlines] = useState<Deadline[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [changingStatus, setChangingStatus] = useState(false);
   const [nextStatus, setNextStatus] = useState<ProcessStatus>('ATIVO');
+  const [deadlineEditor, setDeadlineEditor] = useState<Deadline | 'new' | null>(null);
   const [feedback, setFeedback] = useState<{ message: string; kind: 'success' | 'error' } | null>(null);
 
   async function loadDetails() {
     setLoading(true);
     try {
-      const [processResponse, movementsResponse] = await Promise.all([
+      const [processResponse, movementsResponse, deadlinesResponse] = await Promise.all([
         getProcess(processId),
         listMovements(processId),
+        listProcessDeadlines(processId),
       ]);
       setProcess(processResponse);
       setNextStatus(processResponse.status);
       setMovements(movementsResponse.data);
+      setDeadlines(deadlinesResponse.data);
     } catch (requestError) {
       setFeedback({ message: errorMessage(requestError), kind: 'error' });
     } finally {
@@ -330,6 +537,14 @@ function ProcessDetailsModal({
     } finally {
       setChangingStatus(false);
     }
+  }
+
+  async function handleDeadlineChanged(message: string) {
+    setDeadlineEditor(null);
+    setFeedback({ message, kind: 'success' });
+    const response = await listProcessDeadlines(processId);
+    setDeadlines(response.data);
+    onChanged(message);
   }
 
   return (
@@ -388,6 +603,48 @@ function ProcessDetailsModal({
                 <Detail label="Cadastrado em" value={formatDate(process.created_at)} />
               </div>
 
+              <section className={styles.deadlinesSection}>
+                <div className={styles.deadlinesHeader}>
+                  <div>
+                    <p className={styles.modalEyebrow}>Providências jurídicas</p>
+                    <h3>Prazos processuais</h3>
+                  </div>
+                  <button onClick={() => setDeadlineEditor('new')}>
+                    <Plus size={15} />
+                    Adicionar prazo
+                  </button>
+                </div>
+                <div className={styles.deadlinesList}>
+                  {deadlines.map(deadline => {
+                    const state = deadlineState(deadline.due_date);
+                    return (
+                      <article className={styles.deadlineCard} key={deadline.id}>
+                        <div className={styles.deadlineCardMain}>
+                          <span className={`${styles.deadlineStatus} ${styles[`deadline${state}`]}`}>
+                            {deadlineStateLabel(state)}
+                          </span>
+                          <strong>{deadline.deadline_type}</strong>
+                          <p>
+                            {deadline.business_days} dia(s) útil(eis) desde {formatDateOnly(deadline.start_date)}
+                            {deadline.comarca ? ` · ${deadline.comarca}` : ''}
+                          </p>
+                        </div>
+                        <div className={styles.deadlineDue}>
+                          <span>Data-limite</span>
+                          <strong>{formatDateOnly(deadline.due_date)}</strong>
+                        </div>
+                        <button onClick={() => setDeadlineEditor(deadline)} title="Editar prazo" aria-label="Editar prazo">
+                          <Pencil size={15} />
+                        </button>
+                      </article>
+                    );
+                  })}
+                  {deadlines.length === 0 && (
+                    <p className={styles.deadlinesEmpty}>Nenhum prazo processual cadastrado.</p>
+                  )}
+                </div>
+              </section>
+
               <section className={styles.timelineSection}>
                 <div className={styles.timelineHeader}>
                   <div>
@@ -417,6 +674,15 @@ function ProcessDetailsModal({
                   ))}
                 </div>
               </section>
+
+              {deadlineEditor && (
+                <DeadlineFormModal
+                  process={process}
+                  deadline={deadlineEditor === 'new' ? null : deadlineEditor}
+                  onCancel={() => setDeadlineEditor(null)}
+                  onChanged={message => void handleDeadlineChanged(message)}
+                />
+              )}
             </>
           )}
         </div>
