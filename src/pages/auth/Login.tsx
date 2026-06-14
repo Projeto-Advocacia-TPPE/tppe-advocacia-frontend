@@ -104,6 +104,7 @@ export default function Login() {
 
               <InputField
                 label="E-MAIL"
+                type="email"
                 value={email}
                 onChange={(v) => {
                   setEmail(v);
@@ -161,6 +162,7 @@ export default function Login() {
 
               <InputField
                 label="E-MAIL"
+                type="email"
                 value={emailRec}
                 onChange={(v) => {
                   setEmailRec(v);

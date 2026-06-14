@@ -21,23 +21,25 @@ import { logout } from '../../../services/auth';
 import styles from './Sidebar.module.css';
 
 const NAV_ITEMS = [
-  { label: 'Início',        href: '/sistema',               icon: House        },
-  { label: 'Usuários',      href: '/sistema/usuarios',      icon: Users        },
-  { label: 'Landing Page',  href: '/sistema/landing-page',  icon: Layout       },
-  { label: 'Artigos',       href: '/sistema/artigos',        icon: FileText     },
-  { label: 'Leads',         href: '/sistema/leads',          icon: UserPlus     },
-  { label: 'Clientes',      href: '/sistema/clientes',       icon: UsersRound   },
-  { label: 'Agenda',        href: '/sistema/agenda',         icon: CalendarDays },
-  { label: 'Processos',     href: '/sistema/processos',      icon: Briefcase    },
-  { label: 'Tarefas',       href: '/sistema/tarefas',        icon: LayoutList   },
-  { label: 'Notificações',  href: '/sistema/notificacoes',   icon: Bell         },
+  { label: 'Início',        href: '/sistema',               icon: House,        adminOnly: false },
+  { label: 'Usuários',      href: '/sistema/usuarios',      icon: Users,        adminOnly: true  },
+  { label: 'Landing Page',  href: '/sistema/landing-page',  icon: Layout,       adminOnly: false },
+  { label: 'Artigos',       href: '/sistema/artigos',        icon: FileText,     adminOnly: false },
+  { label: 'Leads',         href: '/sistema/leads',          icon: UserPlus,     adminOnly: false },
+  { label: 'Clientes',      href: '/sistema/clientes',       icon: UsersRound,   adminOnly: false },
+  { label: 'Agenda',        href: '/sistema/agenda',         icon: CalendarDays, adminOnly: false },
+  { label: 'Processos',     href: '/sistema/processos',      icon: Briefcase,    adminOnly: false },
+  { label: 'Tarefas',       href: '/sistema/tarefas',        icon: LayoutList,   adminOnly: false },
+  { label: 'Notificações',  href: '/sistema/notificacoes',   icon: Bell,         adminOnly: false },
 ];
 
 export default function Sidebar() {
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const role = getSessionClaims()?.role === 'ADMIN' ? 'Administrador' : 'Usuário';
+  const claims = getSessionClaims();
+  const role = claims?.role === 'ADMIN' ? 'Administrador' : 'Usuário';
+  const isAdmin = claims?.role === 'ADMIN';
 
   function handleLogout() {
     logout();
@@ -79,7 +81,7 @@ export default function Sidebar() {
 
         {/* Nav links */}
         <nav className={styles.nav}>
-          {NAV_ITEMS.map(({ label, href, icon: Icon }) => (
+          {NAV_ITEMS.filter(item => !item.adminOnly || isAdmin).map(({ label, href, icon: Icon }) => (
             <NavLink
               key={href}
               to={href}
