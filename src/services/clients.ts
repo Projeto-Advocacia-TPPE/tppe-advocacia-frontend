@@ -125,3 +125,11 @@ export async function createClientNote(clientId: number, content: string): Promi
   });
   return response.data;
 }
+
+export async function updateClientNote(clientId: number, noteId: number, content: string): Promise<ClientNote> {
+  const response = await apiRequest<SuccessResponse<ClientNote>>(`/clients/${clientId}/notes/${noteId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ content }),
+  });
+  return response.data;
+}

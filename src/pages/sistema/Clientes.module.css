@@ -108,7 +108,17 @@
 .noteForm button:disabled { opacity: .45; cursor: default; }
 .noteItem { padding: 11px 12px; border-left: 3px solid #c8d0dc; background: #f7f8fa; }
 .noteItem p { color: var(--text); font-size: .73rem; line-height: 1.5; white-space: pre-wrap; margin-bottom: 7px; }
-.noteItem span, .activityItem div > span { color: var(--gray); font-size: .62rem; }
+.noteItemFooter { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.noteItemFooter span, .activityItem div > span { color: var(--gray); font-size: .62rem; }
+.noteEditButton { display: grid; place-items: center; border: none; background: transparent; color: var(--gray); cursor: pointer; padding: 2px; border-radius: 3px; flex-shrink: 0; opacity: 0; transition: opacity .15s; }
+.noteItem:hover .noteEditButton { opacity: 1; }
+.noteEditButton:hover { color: var(--navy); background: #e8edf5; }
+.noteEditForm { display: grid; gap: 8px; }
+.noteEditForm textarea { width: 100%; resize: vertical; min-height: 70px; border: 1px solid #9aa8ba; border-radius: 6px; padding: 8px 10px; outline: none; color: var(--navy); font: inherit; font-size: .75rem; background: var(--white); box-shadow: 0 0 0 3px rgba(38,56,89,.08); }
+.noteEditActions { display: flex; justify-content: flex-end; gap: 6px; }
+.noteEditCancel { border: 1px solid #dfe2e8; background: var(--white); color: var(--navy); border-radius: 5px; padding: 0 10px; min-height: 30px; font: inherit; font-size: .7rem; font-weight: 700; cursor: pointer; }
+.noteEditSave { border: 1px solid var(--navy); background: var(--navy); color: var(--white); border-radius: 5px; padding: 0 10px; min-height: 30px; font: inherit; font-size: .7rem; font-weight: 700; cursor: pointer; }
+.noteEditSave:disabled { opacity: .45; cursor: default; }
 .activityItem { position: relative; display: grid; grid-template-columns: 12px minmax(0, 1fr); gap: 8px; padding-bottom: 12px; }
 .activityItem:not(:last-child)::before { content: ''; position: absolute; left: 5px; top: 11px; bottom: -3px; width: 1px; background: #dfe3e9; }
 .activityDot { width: 11px; height: 11px; margin-top: 2px; border: 3px solid #e9edf3; border-radius: 50%; background: var(--crimson); z-index: 1; }
@@ -127,6 +137,13 @@
 .confirmField input:focus { border-color: #9aa8ba; box-shadow: 0 0 0 3px rgba(38,56,89,.08); }
 .dangerButton { min-height: 40px; display: flex; align-items: center; gap: 6px; padding: 0 15px; border: 1px solid var(--crimson); border-radius: 6px; color: var(--white); background: var(--crimson); font: inherit; font-size: .75rem; font-weight: 700; cursor: pointer; }
 .dangerButton:disabled { opacity: .4; cursor: default; }
+.processFallback { padding: 18px 20px; border-top: 1px solid #eceef2; display: grid; gap: 10px; }
+.processFallbackLabel { display: flex; align-items: center; gap: 7px; color: var(--gray); font-size: .72rem; }
+.processFallbackItem { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid #e7e9ed; border-radius: 7px; background: #fafbfc; }
+.processFallbackInfo { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.processFallbackInfo strong { color: var(--navy); font-size: .78rem; overflow-wrap: anywhere; }
+.processFallbackInfo span { color: var(--gray); font-size: .69rem; }
+.processFallbackClient { color: var(--crimson) !important; font-weight: 700; }
 .spinning { animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 

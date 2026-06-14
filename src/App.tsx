@@ -91,7 +91,9 @@ export default function App() {
             </Route>
             <Route path="landing-page" element={<LandingPageConfig />} />
             <Route path="artigos" element={<Artigos_ />} />
-            <Route path="leads" element={<Leads />} />
+            <Route element={<AdminRoute />}>
+              <Route path="leads" element={<Leads />} />
+            </Route>
             <Route path="clientes" element={<Clientes />} />
             <Route path="agenda" element={<Agenda />} />
             <Route path="processos" element={<Processos />} />

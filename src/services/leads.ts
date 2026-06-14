@@ -59,7 +59,7 @@ export async function listLeads(params: {
 
 export async function updateLead(
   leadId: number,
-  payload: { status?: LeadStatus; assigned_to?: number },
+  payload: { status?: LeadStatus; assigned_to?: number | null },
 ): Promise<Lead> {
   const response = await apiRequest<SuccessResponse<Lead>>(`/leads/${leadId}`, {
     method: 'PATCH',

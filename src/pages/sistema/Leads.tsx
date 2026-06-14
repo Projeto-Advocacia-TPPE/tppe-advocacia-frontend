@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   CheckCircle2,
   ChevronLeft,
@@ -51,13 +51,6 @@ function formatDate(value: string): string {
   }).format(new Date(value));
 }
 
-function initials(name: string): string {
-  return name
-    .split(' ')
-    .slice(0, 2)
-    .map(part => part[0]?.toUpperCase() ?? '')
-    .join('');
-}
 
 function errorMessage(error: unknown): string {
   if (error instanceof ApiError && error.status === 403) {
@@ -79,21 +72,26 @@ export default function Leads() {
   const [selected, setSelected] = useState<Lead | null>(null);
   const [updating, setUpdating] = useState(false);
   const [feedback, setFeedback] = useState<{ message: string; kind: 'success' | 'error' } | null>(null);
-
-  const stats = useMemo(() => ({
-    newLeads: leads.filter(lead => lead.status === 'novo').length,
-    inService: leads.filter(lead => lead.status === 'em_atendimento').length,
-    closed: leads.filter(lead => lead.status === 'fechado').length,
-  }), [leads]);
+  const [statusTotals, setStatusTotals] = useState({ novo: 0, em_atendimento: 0, fechado: 0 });
 
   async function loadData(isRefresh = false) {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
     try {
-      const response = await listLeads({ page, limit: 12, status, assignedTo });
+      const [response, novos, emAtendimento, fechados] = await Promise.all([
+        listLeads({ page, limit: 12, status, assignedTo }),
+        listLeads({ page: 1, limit: 1, status: 'novo' }),
+        listLeads({ page: 1, limit: 1, status: 'em_atendimento' }),
+        listLeads({ page: 1, limit: 1, status: 'fechado' }),
+      ]);
       setLeads(response.data);
       setTotal(response.meta.total);
       setPages(response.meta.pages);
+      setStatusTotals({
+        novo: novos.meta.total,
+        em_atendimento: emAtendimento.meta.total,
+        fechado: fechados.meta.total,
+      });
     } catch (error) {
       setFeedback({ message: errorMessage(error), kind: 'error' });
     } finally {
@@ -154,10 +152,10 @@ export default function Leads() {
       </header>
 
       <section className={styles.metrics}>
-        <Metric icon={<UsersRound size={20} />} label="Leads encontrados" value={total} tone="navy" />
-        <Metric icon={<UserPlus size={20} />} label="Novos nesta página" value={stats.newLeads} tone="blue" />
-        <Metric icon={<Clock3 size={20} />} label="Em atendimento" value={stats.inService} tone="amber" />
-        <Metric icon={<CheckCircle2 size={20} />} label="Fechados nesta página" value={stats.closed} tone="green" />
+        <Metric icon={<UsersRound size={20} />} label="Total de leads" value={total} tone="navy" />
+        <Metric icon={<UserPlus size={20} />} label="Novos" value={statusTotals.novo} tone="blue" />
+        <Metric icon={<Clock3 size={20} />} label="Em atendimento" value={statusTotals.em_atendimento} tone="amber" />
+        <Metric icon={<CheckCircle2 size={20} />} label="Fechados" value={statusTotals.fechado} tone="green" />
       </section>
 
       <section className={styles.panel}>
@@ -176,8 +174,8 @@ export default function Leads() {
           <table className={styles.table}>
             <thead>
               <tr>
+                <th>Nome</th>
                 <th>Contato</th>
-                <th>Mensagem</th>
                 <th>Responsável</th>
                 <th>Recebido em</th>
                 <th>Status</th>
@@ -188,16 +186,13 @@ export default function Leads() {
               {loading && <tr><td colSpan={6} className={styles.empty}>Carregando leads...</td></tr>}
               {!loading && leads.map(lead => (
                 <tr key={lead.id}>
+                  <td><strong>{lead.name}</strong></td>
                   <td>
                     <div className={styles.contact}>
-                      <span className={styles.avatar}>{initials(lead.name)}</span>
-                      <div>
-                        <strong>{lead.name}</strong>
-                        <span>{lead.email}</span>
-                      </div>
+                      <span>{lead.email}</span>
+                      {lead.phone && <span>{lead.phone}</span>}
                     </div>
                   </td>
-                  <td className={styles.messageCell}>{lead.message ?? 'Sem mensagem'}</td>
                   <td>{users.find(user => user.id === lead.assigned_to)?.name ?? 'Não atribuído'}</td>
                   <td>{formatDate(lead.created_at)}</td>
                   <td><StatusBadge status={lead.status} /></td>
@@ -259,7 +254,8 @@ export default function Leads() {
                 <select
                   value={selected.assigned_to ?? ''}
                   onChange={event => {
-                    if (event.target.value) void handleUpdate({ assigned_to: Number(event.target.value) });
+                    const value = event.target.value;
+                    void handleUpdate({ assigned_to: value ? Number(value) : null });
                   }}
                   disabled={updating}
                 >
