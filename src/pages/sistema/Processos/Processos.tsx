@@ -11,11 +11,13 @@ import {
   ChevronRight,
   CloudDownload,
   ExternalLink,
+  MessageSquareText,
   Pencil,
   Plus,
   RefreshCw,
   Scale,
   Search,
+  Send,
   Trash2,
   X,
 } from 'lucide-react';
@@ -31,18 +33,23 @@ import {
 import {
   changeProcessStatus,
   ClientListItem,
+  createMovement,
   createProcess,
+  createProcessNote,
   DataJudSyncResult,
   getProcess,
   listClients,
   listMovements,
   listProcesses,
+  listProcessNotes,
   Movement,
   ProcessCreate,
   ProcessDetail,
   ProcessListItem,
+  ProcessNote,
   ProcessStatus,
   syncProcessWithDataJud,
+  updateProcessNote,
 } from '../../../services/processes';
 import styles from './Processos.module.css';
 
@@ -471,25 +478,37 @@ function ProcessDetailsModal({
   const [process, setProcess] = useState<ProcessDetail | null>(null);
   const [movements, setMovements] = useState<Movement[]>([]);
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
+  const [notes, setNotes] = useState<ProcessNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [changingStatus, setChangingStatus] = useState(false);
   const [nextStatus, setNextStatus] = useState<ProcessStatus>('ATIVO');
   const [deadlineEditor, setDeadlineEditor] = useState<Deadline | 'new' | null>(null);
   const [feedback, setFeedback] = useState<{ message: string; kind: 'success' | 'error' } | null>(null);
+  const [movementOpen, setMovementOpen] = useState(false);
+  const [movTitle, setMovTitle] = useState('');
+  const [movDesc, setMovDesc] = useState('');
+  const [movOccurredAt, setMovOccurredAt] = useState('');
+  const [movementSubmitting, setMovementSubmitting] = useState(false);
+  const [noteContent, setNoteContent] = useState('');
+  const [noteSubmitting, setNoteSubmitting] = useState(false);
+  const [editingNote, setEditingNote] = useState<{ id: number; content: string } | null>(null);
+  const [noteEditSubmitting, setNoteEditSubmitting] = useState(false);
 
   async function loadDetails() {
     setLoading(true);
     try {
-      const [processResponse, movementsResponse, deadlinesResponse] = await Promise.all([
+      const [processResponse, movementsResponse, deadlinesResponse, notesResponse] = await Promise.all([
         getProcess(processId),
         listMovements(processId),
         listProcessDeadlines(processId),
+        listProcessNotes(processId),
       ]);
       setProcess(processResponse);
       setNextStatus(processResponse.status);
       setMovements(movementsResponse.data);
       setDeadlines(deadlinesResponse.data);
+      setNotes(notesResponse.data);
     } catch (requestError) {
       setFeedback({ message: errorMessage(requestError), kind: 'error' });
     } finally {
@@ -545,6 +564,63 @@ function ProcessDetailsModal({
     const response = await listProcessDeadlines(processId);
     setDeadlines(response.data);
     onChanged(message);
+  }
+
+  async function handleCreateMovement() {
+    if (!movTitle.trim()) return;
+    setMovementSubmitting(true);
+    setFeedback(null);
+    try {
+      await createMovement(processId, {
+        title: movTitle.trim(),
+        description: movDesc.trim() || undefined,
+        occurred_at: movOccurredAt || undefined,
+      });
+      setMovTitle('');
+      setMovDesc('');
+      setMovOccurredAt('');
+      setMovementOpen(false);
+      const movementsResponse = await listMovements(processId);
+      setMovements(movementsResponse.data);
+      setFeedback({ message: 'Movimentação registrada com sucesso.', kind: 'success' });
+      onChanged('Movimentação registrada.');
+    } catch (requestError) {
+      setFeedback({ message: errorMessage(requestError), kind: 'error' });
+    } finally {
+      setMovementSubmitting(false);
+    }
+  }
+
+  async function handleCreateNote() {
+    if (!noteContent.trim()) return;
+    setNoteSubmitting(true);
+    try {
+      await createProcessNote(processId, noteContent.trim());
+      setNoteContent('');
+      const notesResponse = await listProcessNotes(processId);
+      setNotes(notesResponse.data);
+      setFeedback({ message: 'Anotação registrada.', kind: 'success' });
+    } catch (requestError) {
+      setFeedback({ message: errorMessage(requestError), kind: 'error' });
+    } finally {
+      setNoteSubmitting(false);
+    }
+  }
+
+  async function handleUpdateNote() {
+    if (!editingNote || !editingNote.content.trim()) return;
+    setNoteEditSubmitting(true);
+    try {
+      await updateProcessNote(processId, editingNote.id, editingNote.content.trim());
+      setEditingNote(null);
+      const notesResponse = await listProcessNotes(processId);
+      setNotes(notesResponse.data);
+      setFeedback({ message: 'Anotação atualizada.', kind: 'success' });
+    } catch (requestError) {
+      setFeedback({ message: errorMessage(requestError), kind: 'error' });
+    } finally {
+      setNoteEditSubmitting(false);
+    }
   }
 
   return (
@@ -651,8 +727,73 @@ function ProcessDetailsModal({
                     <p className={styles.modalEyebrow}>Histórico</p>
                     <h3>Movimentações processuais</h3>
                   </div>
-                  <span>{movements.length} registro(s)</span>
+                  <button
+                    className={styles.movementFormToggle}
+                    onClick={() => setMovementOpen(v => !v)}
+                  >
+                    <Plus size={14} />
+                    Registrar
+                  </button>
                 </div>
+
+                {movementOpen && (
+                  <div className={styles.movementFormWrap}>
+                    <div className={styles.mField}>
+                      <label className={styles.mLabel}>Título *</label>
+                      <input
+                        className={styles.mInput}
+                        value={movTitle}
+                        onChange={event => setMovTitle(event.target.value)}
+                        placeholder="Ex: Audiência de conciliação realizada"
+                        maxLength={150}
+                      />
+                    </div>
+                    <div className={styles.mField}>
+                      <label className={styles.mLabel}>Descrição (opcional)</label>
+                      <textarea
+                        className={styles.mTextarea}
+                        rows={3}
+                        value={movDesc}
+                        onChange={event => setMovDesc(event.target.value)}
+                        placeholder="Detalhes adicionais..."
+                        maxLength={5000}
+                      />
+                    </div>
+                    <div className={styles.mField}>
+                      <label className={styles.mLabel}>Data/hora da ocorrência (opcional)</label>
+                      <input
+                        className={styles.mInput}
+                        type="datetime-local"
+                        value={movOccurredAt}
+                        onChange={event => setMovOccurredAt(event.target.value)}
+                        max={new Date().toISOString().slice(0, 16)}
+                      />
+                      <small className={styles.fieldHint}>Se não informado, registra como agora.</small>
+                    </div>
+                    <div className={styles.movementFormActions}>
+                      <button
+                        className={styles.btnCancel}
+                        onClick={() => {
+                          setMovementOpen(false);
+                          setMovTitle('');
+                          setMovDesc('');
+                          setMovOccurredAt('');
+                        }}
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        className={styles.btnSave}
+                        onClick={() => void handleCreateMovement()}
+                        disabled={!movTitle.trim() || movementSubmitting}
+                      >
+                        <Send size={14} />
+                        {movementSubmitting ? 'Registrando...' : 'Registrar movimentação'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <div className={styles.timeline}>
                   {movements.length === 0 && (
                     <p className={styles.timelineEmpty}>Nenhuma movimentação registrada ainda.</p>
@@ -670,6 +811,86 @@ function ProcessDetailsModal({
                         {movement.description && <p>{movement.description}</p>}
                         <time>{formatDate(movement.occurred_at)}</time>
                       </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+
+              <section className={styles.notesSection}>
+                <div className={styles.notesHeader}>
+                  <h3><MessageSquareText size={16} /> Anotações internas</h3>
+                  <span>{notes.length} anotação(ões)</span>
+                </div>
+                <form
+                  className={styles.noteForm}
+                  onSubmit={event => { event.preventDefault(); void handleCreateNote(); }}
+                >
+                  <textarea
+                    rows={3}
+                    maxLength={5000}
+                    value={noteContent}
+                    onChange={event => setNoteContent(event.target.value)}
+                    placeholder="Registre uma estratégia, observação ou lembrete sobre este processo"
+                  />
+                  <button type="submit" disabled={noteSubmitting || !noteContent.trim()}>
+                    <Send size={15} />
+                    {noteSubmitting ? 'Registrando...' : 'Registrar'}
+                  </button>
+                </form>
+                <div className={styles.noteList}>
+                  {notes.length === 0 && (
+                    <p className={styles.notesEmpty}>Nenhuma anotação interna registrada.</p>
+                  )}
+                  {notes.map(n => (
+                    <article className={styles.noteItem} key={n.id}>
+                      {editingNote?.id === n.id ? (
+                        <form
+                          className={styles.noteEditForm}
+                          onSubmit={event => { event.preventDefault(); void handleUpdateNote(); }}
+                        >
+                          <textarea
+                            rows={3}
+                            maxLength={5000}
+                            value={editingNote.content}
+                            onChange={event => setEditingNote({ ...editingNote, content: event.target.value })}
+                            autoFocus
+                          />
+                          <div className={styles.noteEditActions}>
+                            <button
+                              type="button"
+                              className={styles.noteEditCancel}
+                              onClick={() => setEditingNote(null)}
+                            >
+                              Cancelar
+                            </button>
+                            <button
+                              type="submit"
+                              className={styles.noteEditSave}
+                              disabled={noteEditSubmitting || !editingNote.content.trim()}
+                            >
+                              {noteEditSubmitting ? 'Salvando...' : 'Salvar'}
+                            </button>
+                          </div>
+                        </form>
+                      ) : (
+                        <>
+                          <p>{n.content}</p>
+                          <div className={styles.noteItemFooter}>
+                            <span>
+                              {n.updated_by_name
+                                ? `Editado por ${n.updated_by_name}`
+                                : n.created_by_name} · {formatDate(n.updated_at)}
+                            </span>
+                            <button
+                              className={styles.noteEditButton}
+                              onClick={() => setEditingNote({ id: n.id, content: n.content })}
+                              aria-label="Editar anotação"
+                            >
+                              <Pencil size={14} />
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </article>
                   ))}
                 </div>
