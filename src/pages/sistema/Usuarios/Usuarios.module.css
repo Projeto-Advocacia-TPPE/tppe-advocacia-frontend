@@ -217,3 +217,15 @@
   margin-bottom: 8px;
 }
 .deleteText strong { color: var(--navy); }
+
+/* Status messages */
+.statusMsg {
+  padding: 24px 0;
+  color: var(--gray); font-size: .9rem; text-align: center;
+}
+
+.errorMsg {
+  padding: 10px 14px; margin: 8px 0;
+  background: #fce4ec; color: var(--crimson);
+  border-radius: 8px; font-size: .85rem;
+}

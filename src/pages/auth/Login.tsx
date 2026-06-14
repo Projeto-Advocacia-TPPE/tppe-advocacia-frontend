@@ -99,11 +99,12 @@ export default function Login() {
         <div className={styles.cardBody}>
           {/* ── LOGIN ── */}
           {tela === 'login' && (
-            <>
+            <form onSubmit={(e) => { e.preventDefault(); void handleLogin(); }}>
               <h1 className={styles.cardTitle}>Login</h1>
 
               <InputField
                 label="E-MAIL"
+                type="email"
                 value={email}
                 onChange={(v) => {
                   setEmail(v);
@@ -116,6 +117,7 @@ export default function Login() {
 
               <div className={styles.forgotRow}>
                 <button
+                  type="button"
                   className={styles.forgotLink}
                   onClick={() => {
                     setTela('esqueci');
@@ -140,20 +142,20 @@ export default function Login() {
               />
 
               <button
+                type="submit"
                 className={styles.btnSubmit}
-                onClick={() => void handleLogin()}
                 disabled={loading || !email || !senha}
               >
                 {loading ? 'Entrando...' : 'Entrar'}
               </button>
 
               {erroLogin && <p className={styles.errorMsg}>{erroLogin}</p>}
-            </>
+            </form>
           )}
 
           {/* ── ESQUECI SENHA ── */}
           {tela === 'esqueci' && (
-            <>
+            <form onSubmit={(e) => { e.preventDefault(); void handleEsqueci(); }}>
               <h1 className={styles.cardTitle} style={{ textAlign: 'left', fontSize: '1.4rem' }}>
                 Esqueci minha senha
               </h1>
@@ -161,6 +163,7 @@ export default function Login() {
 
               <InputField
                 label="E-MAIL"
+                type="email"
                 value={emailRec}
                 onChange={(v) => {
                   setEmailRec(v);
@@ -171,16 +174,16 @@ export default function Login() {
                 placeholder="seu@email.com"
               />
 
-              <button className={styles.btnSubmit} onClick={() => void handleEsqueci()} disabled={loading || !emailRec}>
+              <button type="submit" className={styles.btnSubmit} disabled={loading || !emailRec}>
                 {loading ? 'Enviando...' : 'Enviar'}
               </button>
 
               {erroRec && <p className={styles.errorMsg}>{erroRec}</p>}
 
-              <button className={styles.backLink} onClick={() => setTela('login')}>
+              <button type="button" className={styles.backLink} onClick={() => setTela('login')}>
                 <ArrowLeft size={14} /> Voltar para Login
               </button>
-            </>
+            </form>
           )}
 
           {tela === 'solicitado' && (

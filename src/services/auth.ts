@@ -27,6 +27,14 @@ export async function requestPasswordReset(email: string): Promise<void> {
   });
 }
 
+export async function confirmPasswordReset(token: string, new_password: string): Promise<void> {
+  await apiRequest<SuccessResponse<null>>('/auth/password-reset/confirm', {
+    method: 'POST',
+    authenticated: false,
+    body: JSON.stringify({ token, new_password }),
+  });
+}
+
 export function logout(): void {
   clearAccessToken();
 }

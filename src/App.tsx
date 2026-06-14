@@ -2,7 +2,9 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 // Auth
 import Login from './pages/auth/Login';
+import ResetPassword from './pages/auth/ResetPassword';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import AdminRoute from './components/auth/AdminRoute';
 
 // Landing page components
 import Navbar from './components/Navbar/Navbar';
@@ -56,12 +58,15 @@ export default function App() {
 
         {/* Auth */}
         <Route path="/login" element={<Login />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* Sistema */}
         <Route element={<ProtectedRoute />}>
           <Route path="/sistema" element={<SistemaLayout />}>
             <Route index element={<Dashboard />} />
-            <Route path="usuarios" element={<Usuarios />} />
+            <Route element={<AdminRoute />}>
+              <Route path="usuarios" element={<Usuarios />} />
+            </Route>
             <Route path="landing-page" element={<LandingPageConfig />} />
             <Route path="artigos" element={<Artigos_ />} />
             <Route path="leads" element={<Leads />} />
