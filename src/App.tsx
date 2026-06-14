@@ -17,6 +17,7 @@ import Artigos from './components/Artigos/Artigos';
 import Contato from './components/Contato/Contato';
 import Footer from './components/Footer/Footer';
 import { OfficeConfigProvider } from './contexts/OfficeConfigContext';
+import ArtigoPage from './pages/public/ArtigoPage';
 
 // Sistema
 import SistemaLayout from './layouts/SistemaLayout';
@@ -55,6 +56,7 @@ export default function App() {
       <Routes>
         {/* Landing page pública */}
         <Route path="/" element={<LandingPage />} />
+        <Route path="/artigos/:id" element={<ArtigoPage />} />
 
         {/* Auth */}
         <Route path="/login" element={<Login />} />

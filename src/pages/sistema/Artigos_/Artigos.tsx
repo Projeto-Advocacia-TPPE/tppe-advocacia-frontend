@@ -89,7 +89,7 @@ export default function Artigos() {
   async function salvarNovo(dados: Omit<Artigo, 'id' | 'data' | 'ultimaEdicao'> & { conteudo?: string }) {
     setSaving(true);
     try {
-      const criado = await criarArtigo(buildCreatePayload({
+      await criarArtigo(buildCreatePayload({
         titulo:    dados.titulo,
         conteudo:  dados.conteudo ?? '',
         categoria: dados.categoria ?? '',
@@ -97,9 +97,8 @@ export default function Artigos() {
         imagem:    dados.imagem,
         status:    dados.status,
       }));
-      setArtigos(prev => [detailToArtigo(criado), ...prev]);
-      setTotal(t => t + 1);
-      if (dados.status === 'PUBLICADO') setView('lista');
+      setView('lista');
+      await fetchArtigos(1);
     } catch (e: any) {
       setErro(e.message ?? 'Erro ao criar artigo.');
     } finally {
@@ -112,7 +111,7 @@ export default function Artigos() {
     if (!selected) return;
     setSaving(true);
     try {
-      const atualizado = await atualizarArtigo(selected.id, buildUpdatePayload({
+      await atualizarArtigo(selected.id, buildUpdatePayload({
         titulo:    dados.titulo,
         conteudo:  dados.conteudo ?? '',
         categoria: dados.categoria ?? '',
@@ -120,8 +119,8 @@ export default function Artigos() {
         imagem:    dados.imagem,
         status:    dados.status,
       }));
-      setArtigos(prev => prev.map(a => a.id === selected.id ? detailToArtigo(atualizado) : a));
-      if (dados.status === 'PUBLICADO') setView('lista');
+      setView('lista');
+      await fetchArtigos(page);
     } catch (e: any) {
       setErro(e.message ?? 'Erro ao salvar edição.');
     } finally {
@@ -129,27 +128,16 @@ export default function Artigos() {
     }
   }
 
-  /* ── Excluir ── */
-  async function confirmarExclusao() {
-    if (!selected) return;
-    try {
-      await excluirArtigo(selected.id);
-      closeModal();
-      fetchArtigos(page);
-    } catch (e: any) {
-      setErro(e.message ?? 'Erro ao excluir artigo.');
-      closeModal();
-    }
-  }
-
   /* ── Views full-page ── */
   if (view === 'criar') {
     return (
       <CriarArtigo
-        onVoltar={() => setView('lista')}
+        onVoltar={() => { setView('lista'); setErro(null); }}
         onSalvar={salvarNovo}
         saving={saving}
         modo="criar"
+        erro={erro}
+        onClearErro={() => setErro(null)}
       />
     );
   }
@@ -157,11 +145,13 @@ export default function Artigos() {
   if (view === 'editar' && selected) {
     return (
       <CriarArtigo
-        onVoltar={() => setView('lista')}
+        onVoltar={() => { setView('lista'); setErro(null); }}
         onSalvar={salvarEdicao}
         inicial={selected}
         saving={saving}
         modo="editar"
+        erro={erro}
+        onClearErro={() => setErro(null)}
       />
     );
   }

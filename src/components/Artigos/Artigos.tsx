@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { apiRequest } from '../../services/api';
 import type { PaginatedResponse } from '../../services/api';
-import { artigos as staticArtigos } from '../../data';
 import styles from './Artigos.module.css';
 
 interface ArtigoPublico {
@@ -36,9 +36,8 @@ function toItem(a: ArtigoPublico): ArtigoItem {
 const PER_PAGE = 3;
 
 export default function Artigos() {
-  const [artigos, setArtigos] = useState<ArtigoItem[]>(
-    staticArtigos.map(a => ({ id: a.id, title: a.title, excerpt: a.excerpt, date: a.date })),
-  );
+  const [artigos, setArtigos] = useState<ArtigoItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [startIndex, setStartIndex] = useState(0);
   const [nextIndex,  setNextIndex]  = useState(0);
@@ -48,10 +47,9 @@ export default function Artigos() {
 
   useEffect(() => {
     apiRequest<PaginatedResponse<ArtigoPublico>>('/articles?limit=100', { authenticated: false })
-      .then(res => {
-        if (res.data.length > 0) setArtigos(res.data.map(toItem));
-      })
-      .catch(() => {});
+      .then(res => setArtigos(res.data.map(toItem)))
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
   const TOTAL      = artigos.length;
@@ -126,6 +124,24 @@ export default function Artigos() {
           <h2 className={styles.heading}>Artigos e Notícias</h2>
         </div>
 
+        {loading ? (
+          <div className={styles.grid} style={{ marginBottom: 48 }}>
+            {Array.from({ length: 3 }).map((_, i) => (
+              <article key={i} className={styles.card}>
+                <div style={{ height: 12, width: '40%', background: 'rgba(255,255,255,.1)', borderRadius: 4, marginBottom: 14 }} />
+                <div style={{ height: 22, width: '85%', background: 'rgba(255,255,255,.12)', borderRadius: 4, marginBottom: 10 }} />
+                <div style={{ height: 22, width: '60%', background: 'rgba(255,255,255,.12)', borderRadius: 4, marginBottom: 14 }} />
+                <div style={{ height: 14, width: '95%', background: 'rgba(255,255,255,.08)', borderRadius: 4, marginBottom: 8 }} />
+                <div style={{ height: 14, width: '80%', background: 'rgba(255,255,255,.08)', borderRadius: 4 }} />
+              </article>
+            ))}
+          </div>
+        ) : artigos.length === 0 ? (
+          <p style={{ color: 'rgba(255,255,255,.4)', fontSize: '.9rem', marginBottom: 48 }}>
+            Nenhum artigo publicado.
+          </p>
+        ) : (
+        <>
         <div className={styles.carouselRow}>
           <button
             className={styles.sideArrow}
@@ -142,7 +158,7 @@ export default function Artigos() {
                     <p className={styles.date}>{a.date}</p>
                     <h3 className={styles.cardTitle}>{a.title}</h3>
                     <p className={styles.excerpt}>{a.excerpt}</p>
-                    <a href="#" className={styles.leia}>Leia mais →</a>
+                    <Link to={`/artigos/${a.id}`} className={styles.leia}>Leia mais →</Link>
                   </article>
                 ))}
               </div>
@@ -152,7 +168,7 @@ export default function Artigos() {
                     <p className={styles.date}>{a.date}</p>
                     <h3 className={styles.cardTitle}>{a.title}</h3>
                     <p className={styles.excerpt}>{a.excerpt}</p>
-                    <a href="#" className={styles.leia}>Leia mais →</a>
+                    <Link to={`/artigos/${a.id}`} className={styles.leia}>Leia mais →</Link>
                   </article>
                 ))}
               </div>
@@ -191,6 +207,8 @@ export default function Artigos() {
         <p className={styles.showing}>
           Mostrando <strong>{from}–{to}</strong> de {TOTAL} artigos
         </p>
+        </>
+        )}
 
       </div>
     </section>

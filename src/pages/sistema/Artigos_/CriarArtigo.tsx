@@ -38,9 +38,11 @@ interface Props {
   inicial?: Partial<Artigo>;
   saving?: boolean;
   modo?: 'criar' | 'editar';
+  erro?: string | null;
+  onClearErro?: () => void;
 }
 
-export default function CriarArtigo({ onVoltar, onSalvar, inicial, saving = false, modo = 'criar' }: Props) {
+export default function CriarArtigo({ onVoltar, onSalvar, inicial, saving = false, modo = 'criar', erro, onClearErro }: Props) {
   const [titulo, setTitulo]             = useState(inicial?.titulo   ?? '');
   const [categoria, setCategoria]       = useState(inicial?.categoria ?? CATEGORIAS[0]);
   const [status, setStatus]             = useState<Status>(inicial?.status ?? 'RASCUNHO');
@@ -76,8 +78,9 @@ export default function CriarArtigo({ onVoltar, onSalvar, inicial, saving = fals
     }
   }, [preview]); // roda quando preview muda (abre/fecha)
 
-  /* ── Autosave com debounce de 2s ── */
+  /* ── Autosave com debounce de 2s (apenas modo editar) ── */
   function scheduleAutoSave() {
+    if (modo !== 'editar') return;
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     setAutoSaveMsg('saving');
     autoSaveTimer.current = setTimeout(() => {
@@ -234,6 +237,23 @@ export default function CriarArtigo({ onVoltar, onSalvar, inicial, saving = fals
           {modo === 'editar' ? 'Editar Artigo' : 'Criar Artigo'}
         </h1>
       </div>
+
+      {/* ── Erro ── */}
+      {erro && (
+        <div style={{
+          background: '#fff0f0', border: '1px solid #ffcccc', borderRadius: 8,
+          padding: '12px 16px', color: '#c0392b', fontSize: '.88rem',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        }}>
+          {erro}
+          <button
+            onClick={onClearErro}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#c0392b', fontWeight: 700 }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* ── Meta row ── */}
       <div className={styles.metaRow}>
