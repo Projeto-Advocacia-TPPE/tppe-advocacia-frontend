@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { FormEvent, ChangeEvent } from 'react';
 import { ApiError } from '../../services/api';
 import { createLead } from '../../services/leads';
+import { useOfficeConfig } from '../../contexts/OfficeConfigContext';
 import styles from './Contato.module.css';
 
 interface FormState {
@@ -13,6 +14,13 @@ interface FormState {
 }
 
 export default function Contato() {
+  const { config } = useOfficeConfig();
+
+  const endereco   = config?.address      ?? 'Av. Paulista, 1.500 - 10º andar\nBela Vista, São Paulo - SP\nCEP 01310-100';
+  const email      = config?.email        ?? 'contato@vitorfranca.adv.br';
+  const telefone   = config?.phone        ?? '(11) 3456-7890';
+  const whatsappUrl = config?.whatsapp_url ?? 'https://wa.me/5511000000000';
+
   const [form, setForm] = useState<FormState>({
     nome: '',
     email: '',
@@ -20,9 +28,9 @@ export default function Contato() {
     mensagem: '',
     consentimento: false,
   });
-  const [sent, setSent] = useState(false);
+  const [sent, setSent]           = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError]         = useState('');
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const value = e.target instanceof HTMLInputElement && e.target.type === 'checkbox'
@@ -66,19 +74,19 @@ export default function Contato() {
 
             <div className={styles.infoGroup}>
               <p className={styles.infoLabel}>Endereço</p>
-              <p>Av. Paulista, 1.500 - 10º andar<br />Bela Vista, São Paulo - SP<br />CEP 01310-100</p>
+              <p style={{ whiteSpace: 'pre-line' }}>{endereco}</p>
             </div>
             <div className={styles.infoGroup}>
               <p className={styles.infoLabel}>E-mail</p>
-              <p>contato@vitorfranca.adv.br</p>
+              <p>{email}</p>
             </div>
             <div className={styles.infoGroup}>
               <p className={styles.infoLabel}>Telefone</p>
-              <p>(11) 3456-7890</p>
+              <p>{telefone}</p>
             </div>
 
             <a
-              href="https://wa.me/5511000000000"
+              href={whatsappUrl}
               className={styles.btnWpp}
               target="_blank"
               rel="noopener noreferrer"

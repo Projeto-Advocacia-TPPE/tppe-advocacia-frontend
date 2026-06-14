@@ -1,15 +1,22 @@
-import { areas } from '../../data';
+import { areas as staticAreas } from '../../data';
+import { useOfficeConfig } from '../../contexts/OfficeConfigContext';
 import { useScrollReveal } from '../../hooks/useScrollReveal';
 import styles from './Areas.module.css';
 
 export default function Areas() {
+  const { config } = useOfficeConfig();
+
+  const items = config?.areas_of_practice?.length
+    ? config.areas_of_practice
+    : staticAreas.map(a => ({ title: a.title, description: a.description }));
+
   return (
     <section id="areas" className={styles.section}>
       <div className={styles.inner}>
         <h2 className={styles.heading}>Áreas de Atuação</h2>
         <div className={styles.grid}>
-          {areas.map(area => (
-            <AreaItem key={area.id} title={area.title} description={area.description} />
+          {items.map((area, i) => (
+            <AreaItem key={i} title={area.title} description={area.description} />
           ))}
         </div>
       </div>

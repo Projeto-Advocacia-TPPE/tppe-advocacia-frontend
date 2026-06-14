@@ -157,11 +157,6 @@ export async function atualizarArtigo(
   return response.data;
 }
 
-/** Exclui artigo */
-export async function excluirArtigo(id: number): Promise<void> {
-  await apiRequest(`/articles/${id}`, { method: 'DELETE' });
-}
-
 /* ── Helpers para montar payload a partir dos dados do formulário ── */
 
 export function buildCreatePayload(dados: {

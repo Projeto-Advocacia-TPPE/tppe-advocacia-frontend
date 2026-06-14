@@ -1,10 +1,35 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   Building2, Link2, Star, BookOpen, UserRound,
-  Shield, MapPin, Trash2, Plus, ImageIcon, Pencil, Check, X,
+  Shield, MapPin, ImageIcon, Pencil, Check, X, Loader2,
 } from 'lucide-react';
-import { mockLandingPage } from './mockData';
+import { getOfficeConfigUI, updateOfficeConfig, uploadMedia } from '../../../services/officeConfigService';
 import type { LandingPageData, Diferencial, AreaAtuacao } from './types';
+
+const EMPTY_DIFERENCIAIS: Diferencial[] = [
+  { id: 1, titulo: '', descricao: '' },
+  { id: 2, titulo: '', descricao: '' },
+  { id: 3, titulo: '', descricao: '' },
+];
+
+const EMPTY_AREAS: AreaAtuacao[] = [
+  { id: 1, titulo: '', descricao: '' },
+  { id: 2, titulo: '', descricao: '' },
+  { id: 3, titulo: '', descricao: '' },
+  { id: 4, titulo: '', descricao: '' },
+  { id: 5, titulo: '', descricao: '' },
+  { id: 6, titulo: '', descricao: '' },
+];
+
+const EMPTY_DATA: LandingPageData = {
+  email: '', endereco: '', telefone: '',
+  linkedin: '', instagram: '',
+  heroTitulo: '', heroSubtexto: '', heroImagem: '',
+  escritorioTitulo: '', escritorioConteudo: '', escritorioImagem: '',
+  advogadoTitulo: '', advogadoOab: '', advogadoConteudo: '', advogadoImagem: '',
+  diferenciais: EMPTY_DIFERENCIAIS,
+  areas: EMPTY_AREAS,
+};
 import styles from './LandingPage.module.css';
 
 // ── helpers ──────────────────────────────────────────────
@@ -21,7 +46,22 @@ interface ImageUploadProps {
 }
 function ImageUpload({ value, onChange, hint, size }: ImageUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const handleFile = (file: File) => onChange(URL.createObjectURL(file));
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleFile(file: File) {
+    setUploading(true);
+    setError(null);
+    try {
+      const url = await uploadMedia(file);
+      onChange(url);
+    } catch {
+      setError('Falha no upload. Tente novamente.');
+    } finally {
+      setUploading(false);
+    }
+  }
+
   return (
     <div
       className={styles.imgBox}
@@ -32,13 +72,17 @@ function ImageUpload({ value, onChange, hint, size }: ImageUploadProps) {
         <img src={value} alt="preview" className={styles.imgPreview} />
       ) : (
         <>
-          <ImageIcon size={32} className={styles.imgIcon} />
+          {uploading
+            ? <Loader2 size={32} className={styles.imgIcon} style={{ animation: 'spin 1s linear infinite' }} />
+            : <ImageIcon size={32} className={styles.imgIcon} />
+          }
           <p className={styles.imgHint}>{hint}</p>
           <p className={styles.imgSize}>A imagem deve ser {size}.</p>
         </>
       )}
-      <button className={styles.imgBtn} onClick={() => inputRef.current?.click()}>
-        {value ? 'Trocar Imagem' : 'Carregar Imagem'}
+      {error && <p style={{ color: '#e74c3c', fontSize: 12, marginTop: 4 }}>{error}</p>}
+      <button className={styles.imgBtn} disabled={uploading} onClick={() => inputRef.current?.click()}>
+        {uploading ? 'Enviando...' : value ? 'Trocar Imagem' : 'Carregar Imagem'}
       </button>
       <input ref={inputRef} type="file" accept="image/*" style={{ display: 'none' }}
         onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
@@ -71,38 +115,65 @@ function Field({ label, children }: FieldProps) {
 
 // ── main page ────────────────────────────────────────────
 export default function LandingPageConfig() {
-  const [saved,   setSaved]   = useState<LandingPageData>(mockLandingPage);
-  const [data,    setData]    = useState<LandingPageData>(mockLandingPage);
+  const [saved,   setSaved]   = useState<LandingPageData>(EMPTY_DATA);
+  const [data,    setData]    = useState<LandingPageData>(EMPTY_DATA);
+  const [loading, setLoading] = useState(true);
+  const [saving,  setSaving]  = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const isDirty = !deepEqual(data, saved);
+
+  useEffect(() => {
+    getOfficeConfigUI()
+      .then(cfg => {
+        const merged: LandingPageData = {
+          ...cfg,
+          diferenciais: cfg.diferenciais.length > 0 ? cfg.diferenciais : EMPTY_DIFERENCIAIS,
+          areas:        cfg.areas.length        > 0 ? cfg.areas        : EMPTY_AREAS,
+        };
+        setSaved(merged);
+        setData(merged);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
 
   const set = useCallback(<K extends keyof LandingPageData>(key: K, value: LandingPageData[K]) => {
     setData(d => ({ ...d, [key]: value }));
   }, []);
 
   const discard = () => setData(saved);
-  const save    = () => setSaved(data);
+
+  const save = async () => {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const updated = await updateOfficeConfig(data);
+      setSaved(updated);
+      setData(updated);
+    } catch {
+      setSaveError('Erro ao salvar. Verifique sua conexão e tente novamente.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // Diferencial inline edit
   const [editingDif, setEditingDif] = useState<number | null>(null);
   const updateDif = (id: number, field: keyof Diferencial, value: string) =>
     set('diferenciais', data.diferenciais.map(d => d.id === id ? { ...d, [field]: value } : d));
-  const removeDif = (id: number) => set('diferenciais', data.diferenciais.filter(d => d.id !== id));
-  const addDif = () => {
-    const novo: Diferencial = { id: Date.now(), titulo: 'Novo Diferencial', descricao: 'Descrição...' };
-    set('diferenciais', [...data.diferenciais, novo]);
-    setEditingDif(novo.id);
-  };
 
   // Área inline edit
   const [editingArea, setEditingArea] = useState<number | null>(null);
   const updateArea = (id: number, field: keyof AreaAtuacao, value: string) =>
     set('areas', data.areas.map(a => a.id === id ? { ...a, [field]: value } : a));
-  const removeArea = (id: number) => set('areas', data.areas.filter(a => a.id !== id));
-  const addArea = () => {
-    const nova: AreaAtuacao = { id: Date.now(), titulo: 'Nova Área', descricao: 'Descrição...' };
-    set('areas', [...data.areas, nova]);
-    setEditingArea(nova.id);
-  };
+
+  if (loading) {
+    return (
+      <div className={styles.page} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300 }}>
+        <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', color: '#666' }} />
+      </div>
+    );
+  }
 
   return (
     <div className={styles.page}>
@@ -208,15 +279,11 @@ export default function LandingPageConfig() {
                   <p className={styles.listCardDesc}>{d.descricao}</p>
                   <div className={styles.listCardActions}>
                     <button className={styles.iconBtnGray} onClick={() => setEditingDif(d.id)}><Pencil size={13} /></button>
-                    <button className={styles.iconBtnRed}  onClick={() => removeDif(d.id)}><Trash2 size={13} /></button>
                   </div>
                 </>
               )}
             </div>
           ))}
-          <button className={styles.addCard} onClick={addDif}>
-            <Plus size={20} /> Adicionar
-          </button>
         </div>
       </SectionCard>
 
@@ -237,29 +304,33 @@ export default function LandingPageConfig() {
                   <p className={styles.listCardDesc}>{a.descricao}</p>
                   <div className={styles.listCardActions}>
                     <button className={styles.iconBtnGray} onClick={() => setEditingArea(a.id)}><Pencil size={13} /></button>
-                    <button className={styles.iconBtnRed}  onClick={() => removeArea(a.id)}><Trash2 size={13} /></button>
                   </div>
                 </>
               )}
             </div>
           ))}
-          <button className={styles.addCard} onClick={addArea}>
-            <Plus size={20} /> Adicionar
-          </button>
         </div>
       </SectionCard>
 
       {/* ── Bottom bar ── */}
-      <div className={`${styles.bottomBar} ${isDirty ? styles.bottomBarVisible : ''}`}>
-        <span className={styles.bottomMsg}>
-          <span className={styles.dot} /> Alterações não salvas detectadas...
-        </span>
+      <div className={`${styles.bottomBar} ${isDirty || saveError ? styles.bottomBarVisible : ''}`}>
+        {saveError && (
+          <span style={{ color: '#e74c3c', fontSize: 13, marginRight: 'auto' }}>{saveError}</span>
+        )}
+        {!saveError && (
+          <span className={styles.bottomMsg}>
+            <span className={styles.dot} /> Alterações não salvas detectadas...
+          </span>
+        )}
         <div className={styles.bottomActions}>
-          <button className={styles.btnDiscard} onClick={discard}>
+          <button className={styles.btnDiscard} onClick={discard} disabled={saving}>
             <X size={15} /> Descartar
           </button>
-          <button className={styles.btnSave} onClick={save}>
-            <Check size={15} /> Salvar alterações
+          <button className={styles.btnSave} onClick={save} disabled={saving}>
+            {saving
+              ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> Salvando...</>
+              : <><Check size={15} /> Salvar alterações</>
+            }
           </button>
         </div>
       </div>

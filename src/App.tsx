@@ -1,4 +1,23 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
+
+function ScrollToHash() {
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (!hash) return;
+    const id = hash.slice(1);
+    const tryScroll = (attempts = 0) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+      } else if (attempts < 10) {
+        setTimeout(() => tryScroll(attempts + 1), 50);
+      }
+    };
+    tryScroll();
+  }, [hash]);
+  return null;
+}
 
 // Auth
 import Login from './pages/auth/Login';
@@ -16,6 +35,8 @@ import Sobre from './components/Sobre/Sobre';
 import Artigos from './components/Artigos/Artigos';
 import Contato from './components/Contato/Contato';
 import Footer from './components/Footer/Footer';
+import { OfficeConfigProvider } from './contexts/OfficeConfigContext';
+import ArtigoPage from './pages/public/ArtigoPage';
 
 // Sistema
 import SistemaLayout from './layouts/SistemaLayout';
@@ -32,7 +53,7 @@ import Artigos_ from './pages/sistema/Artigos_/Artigos';
 
 function LandingPage() {
   return (
-    <>
+    <OfficeConfigProvider>
       <Navbar />
       <main>
         <Hero />
@@ -44,17 +65,18 @@ function LandingPage() {
         <Contato />
       </main>
       <Footer />
-    </>
+    </OfficeConfigProvider>
   );
 }
 
 export default function App() {
   return (
     <BrowserRouter>
+      <ScrollToHash />
       <Routes>
-        {/* Landing page */}
-        {/* Redirect root to sistema */}
-        <Route path="/" element={<Navigate to="/sistema" replace />} />
+        {/* Landing page pública */}
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/artigos/:id" element={<ArtigoPage />} />
 
         {/* Auth */}
         <Route path="/login" element={<Login />} />
