@@ -36,7 +36,9 @@ import {
   getClientTimeline,
   listClients,
   updateClient,
+  updateClientNote,
 } from '../../services/clients';
+import { ProcessListItem, listProcesses } from '../../services/processes';
 import styles from './Clientes.module.css';
 
 type ClientKind = 'person' | 'company';
@@ -148,10 +150,13 @@ export default function Clientes() {
   const [timelineLoading, setTimelineLoading] = useState(false);
   const [note, setNote] = useState('');
   const [noteSubmitting, setNoteSubmitting] = useState(false);
+  const [editingNote, setEditingNote] = useState<{ id: number; content: string } | null>(null);
+  const [noteEditSubmitting, setNoteEditSubmitting] = useState(false);
   const [anonymizingClient, setAnonymizingClient] = useState<Client | null>(null);
   const [anonymizeConfirmation, setAnonymizeConfirmation] = useState('');
   const [anonymizeSubmitting, setAnonymizeSubmitting] = useState(false);
   const [anonymizeError, setAnonymizeError] = useState('');
+  const [processResults, setProcessResults] = useState<ProcessListItem[]>([]);
   const [feedback, setFeedback] = useState<{ message: string; kind: 'success' | 'error' } | null>(null);
   const isAdmin = getSessionClaims()?.role === 'ADMIN';
 
@@ -164,11 +169,16 @@ export default function Clientes() {
   async function loadClients(isRefresh = false) {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
+    setProcessResults([]);
     try {
       const response = await listClients({ page, limit: 12, search });
       setClients(response.data);
       setTotal(response.meta.total);
       setPages(response.meta.pages || 1);
+      if (response.data.length === 0 && search) {
+        const proc = await listProcesses({ search, limit: 8 });
+        setProcessResults(proc.data.filter(p => p.client_id !== null));
+      }
     } catch (error) {
       showFeedback(errorMessage(error), 'error');
     } finally {
@@ -303,6 +313,22 @@ export default function Clientes() {
     }
   }
 
+  async function handleUpdateNote(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!timeline || !editingNote || !editingNote.content.trim()) return;
+    setNoteEditSubmitting(true);
+    try {
+      await updateClientNote(timeline.client.id, editingNote.id, editingNote.content.trim());
+      setEditingNote(null);
+      await refreshTimeline(timeline.client.id);
+      showFeedback('Observação atualizada.');
+    } catch (error) {
+      showFeedback(errorMessage(error), 'error');
+    } finally {
+      setNoteEditSubmitting(false);
+    }
+  }
+
   function openAnonymize(client: Client) {
     setAnonymizingClient(client);
     setAnonymizeConfirmation('');
@@ -398,7 +424,6 @@ export default function Clientes() {
                 <tr key={client.id}>
                   <td>
                     <div className={styles.client}>
-                      <span className={styles.avatar}>{initials(client.name)}</span>
                       <div>
                         <strong>{client.name}</strong>
                         <span>{client.email ?? 'E-mail não informado'}</span>
@@ -419,12 +444,37 @@ export default function Clientes() {
                   </td>
                 </tr>
               ))}
-              {!loading && clients.length === 0 && (
+              {!loading && clients.length === 0 && processResults.length === 0 && (
                 <tr><td colSpan={5} className={styles.empty}>Nenhum cliente encontrado.</td></tr>
               )}
             </tbody>
           </table>
         </div>
+
+        {!loading && processResults.length > 0 && (
+          <div className={styles.processFallback}>
+            <p className={styles.processFallbackLabel}>
+              <FileText size={14} />
+              Nenhum cliente encontrado pelo termo buscado. Processos vinculados:
+            </p>
+            {processResults.map(process => (
+              <div key={process.id} className={styles.processFallbackItem}>
+                <div className={styles.processFallbackInfo}>
+                  <strong>{process.number}</strong>
+                  <span>{process.action_type} · {process.court}</span>
+                  {process.client_name && <span className={styles.processFallbackClient}>{process.client_name}</span>}
+                </div>
+                <button
+                  className={styles.openButton}
+                  onClick={() => void openTimeline(process.client_id!)}
+                  disabled={timelineLoading}
+                >
+                  Ver ficha
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         <footer className={styles.footer}>
           <span>Mostrando <strong>{clients.length}</strong> de <strong>{total}</strong> cliente(s)</span>
@@ -594,8 +644,38 @@ export default function Clientes() {
                 <div className={styles.noteList}>
                   {timeline.notes.map(item => (
                     <article className={styles.noteItem} key={item.id}>
-                      <p>{item.content}</p>
-                      <span>{item.created_by_name} · {formatDate(item.created_at)}</span>
+                      {editingNote?.id === item.id ? (
+                        <form className={styles.noteEditForm} onSubmit={handleUpdateNote}>
+                          <textarea
+                            rows={3}
+                            maxLength={5000}
+                            value={editingNote.content}
+                            onChange={event => setEditingNote({ ...editingNote, content: event.target.value })}
+                            autoFocus
+                          />
+                          <div className={styles.noteEditActions}>
+                            <button type="button" className={styles.noteEditCancel} onClick={() => setEditingNote(null)}>Cancelar</button>
+                            <button type="submit" className={styles.noteEditSave} disabled={noteEditSubmitting || !editingNote.content.trim()}>
+                              {noteEditSubmitting ? 'Salvando...' : 'Salvar'}
+                            </button>
+                          </div>
+                        </form>
+                      ) : (
+                        <>
+                          <p>{item.content}</p>
+                          <div className={styles.noteItemFooter}>
+                            <span>{item.updated_by_name ? `Editado por ${item.updated_by_name}` : item.created_by_name} · {formatDate(item.updated_at)}</span>
+                            <button
+                              className={styles.noteEditButton}
+                              onClick={() => setEditingNote({ id: item.id, content: item.content })}
+                              title="Editar observação"
+                              aria-label="Editar observação"
+                            >
+                              <Pencil size={12} />
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </article>
                   ))}
                   {timeline.notes.length === 0 && <p className={styles.sectionEmpty}>Nenhuma observação registrada.</p>}
