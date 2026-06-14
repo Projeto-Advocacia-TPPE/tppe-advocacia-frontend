@@ -1,0 +1,120 @@
+/* ── Filter bar ── */
+.filterBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  background: var(--white);
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  margin-bottom: 12px;
+}
+
+/* Input com ícone de busca */
+.filterField {
+  position: relative;
+  flex: 1;
+  min-width: 160px;
+}
+
+.filterIcon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--gray, #888);
+  pointer-events: none;
+}
+
+.filterInput {
+  width: 100%;
+  padding: 8px 12px 8px 30px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: .85rem;
+  color: var(--text);
+  outline: none;
+  transition: border-color .2s;
+  box-sizing: border-box;
+  background: var(--white);
+}
+.filterInput:focus { border-color: var(--navy, #1a2340); }
+.filterInput::placeholder { color: #bbb; }
+
+/* Select */
+.filterSelect {
+  padding: 8px 12px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: .85rem;
+  color: var(--text);
+  background: var(--white);
+  outline: none;
+  cursor: pointer;
+  transition: border-color .2s;
+  min-width: 160px;
+}
+.filterSelect:focus { border-color: var(--navy, #1a2340); }
+
+/* Date range */
+.filterDateWrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.filterDateLabel {
+  font-size: .75rem;
+  font-weight: 700;
+  color: var(--gray, #888);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  white-space: nowrap;
+}
+
+.filterDate {
+  padding: 8px 10px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: .85rem;
+  color: var(--text);
+  background: var(--white);
+  outline: none;
+  cursor: pointer;
+  transition: border-color .2s;
+}
+.filterDate:focus { border-color: var(--navy, #1a2340); }
+
+/* Limpar filtros */
+.filterClear {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--gray, #888);
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: all .2s;
+  white-space: nowrap;
+}
+.filterClear:hover {
+  border-color: var(--crimson, #c0392b);
+  color: var(--crimson, #c0392b);
+}
+
+/* Contagem de resultados */
+.filterCount {
+  font-size: .82rem;
+  color: var(--gray, #888);
+  margin: -4px 0 8px;
+  padding: 0 2px;
+}
