@@ -35,6 +35,7 @@ const CATEGORIAS = [
 interface Props {
   onVoltar: () => void;
   onSalvar: (artigo: Omit<Artigo, 'id' | 'data' | 'ultimaEdicao'>) => void;
+  onAutoSalvar?: (artigo: Omit<Artigo, 'id' | 'data' | 'ultimaEdicao'>) => void;
   inicial?: Partial<Artigo>;
   saving?: boolean;
   modo?: 'criar' | 'editar';
@@ -42,7 +43,7 @@ interface Props {
   onClearErro?: () => void;
 }
 
-export default function CriarArtigo({ onVoltar, onSalvar, inicial, saving = false, modo = 'criar', erro, onClearErro }: Props) {
+export default function CriarArtigo({ onVoltar, onSalvar, onAutoSalvar, inicial, saving = false, modo = 'criar', erro, onClearErro }: Props) {
   const [titulo, setTitulo]             = useState(inicial?.titulo   ?? '');
   const [categoria, setCategoria]       = useState(inicial?.categoria ?? CATEGORIAS[0]);
   const [status, setStatus]             = useState<Status>(inicial?.status ?? 'RASCUNHO');
@@ -78,13 +79,13 @@ export default function CriarArtigo({ onVoltar, onSalvar, inicial, saving = fals
     }
   }, [preview]); // roda quando preview muda (abre/fecha)
 
-  /* ── Autosave com debounce de 2s (apenas modo editar) ── */
+  /* ── Autosave com debounce de 2s ── */
   function scheduleAutoSave() {
-    if (modo !== 'editar') return;
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     setAutoSaveMsg('saving');
     autoSaveTimer.current = setTimeout(() => {
-      onSalvar({
+      const salvarFn = onAutoSalvar ?? onSalvar;
+      salvarFn({
         titulo,
         autor: inicial?.autor ?? '',
         categoria,
@@ -106,7 +107,7 @@ export default function CriarArtigo({ onVoltar, onSalvar, inicial, saving = fals
     conteudoRef.current = html; // sempre atualiza a ref
     setWordCount(words);
     scheduleAutoSave();
-  }, [titulo, categoria, status, resumo, capa, inicial?.autor, onSalvar]);
+  }, [titulo, categoria, status, resumo, capa, inicial?.autor, onAutoSalvar, onSalvar]);
 
   /* ── Toolbar commands ── */
   function cmd(command: string, value?: string) {
@@ -122,7 +123,8 @@ export default function CriarArtigo({ onVoltar, onSalvar, inicial, saving = fals
     try {
       const url = await uploadMedia(file);
       setCapa(url);
-      scheduleAutoSave();
+      // Aqui, o ideal é o useEffect rodar o scheduleAutoSave, pois o estado de "capa" 
+      // é atualizado de forma assíncrona. Adicionei a dependência abaixo no useEffect.
     } catch {
       // silently keep existing capa
     }
@@ -181,11 +183,12 @@ export default function CriarArtigo({ onVoltar, onSalvar, inicial, saving = fals
     }
   }
 
-  /* ── Autosave ao mudar título, resumo, categoria, status ── */
+  /* ── Autosave ao mudar título, resumo, categoria, status ou capa ── */
   useEffect(() => {
-    if (!titulo && !resumo) return;
+    // Evita salvar se o título e o conteúdo estiverem vazios (previne autosaves acidentais logo ao abrir)
+    if (!titulo && !resumo && !conteudoRef.current) return;
     scheduleAutoSave();
-  }, [titulo, resumo, categoria, status]);
+  }, [titulo, resumo, categoria, status, capa]);
 
   /* ── Snapshot para preview ── */
   function buildSnapshot() {
@@ -243,7 +246,7 @@ export default function CriarArtigo({ onVoltar, onSalvar, inicial, saving = fals
         <div style={{
           background: '#fff0f0', border: '1px solid #ffcccc', borderRadius: 8,
           padding: '12px 16px', color: '#c0392b', fontSize: '.88rem',
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px'
         }}>
           {erro}
           <button
