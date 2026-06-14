@@ -1,15 +1,22 @@
-import { diferenciais } from '../../data';
+import { diferenciais as staticDiferenciais } from '../../data';
+import { useOfficeConfig } from '../../contexts/OfficeConfigContext';
 import { useScrollReveal } from '../../hooks/useScrollReveal';
 import styles from './Diferenciais.module.css';
 
 export default function Diferenciais() {
+  const { config } = useOfficeConfig();
+
+  const items = config?.differentials?.length
+    ? config.differentials
+    : staticDiferenciais.map(d => ({ title: d.title, description: d.description }));
+
   return (
     <section id="diferenciais" className={styles.section}>
       <div className={styles.inner}>
         <h2 className={styles.heading}>Nossos Diferenciais</h2>
         <div className={styles.grid}>
-          {diferenciais.map(d => (
-            <Card key={d.id} title={d.title} description={d.description} />
+          {items.map((d, i) => (
+            <Card key={i} title={d.title} description={d.description} />
           ))}
         </div>
       </div>

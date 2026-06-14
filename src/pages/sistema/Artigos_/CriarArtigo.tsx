@@ -5,6 +5,7 @@ import {
   Code, Save, Eye, ChevronDown
 } from 'lucide-react';
 import VisualizarArtigo from './VisualizarArtigo';
+import { uploadMedia } from '../../../services/officeConfigService';
 import styles from './CriarArtigo.module.css';
 
 /* ─── Types ─── */
@@ -112,12 +113,16 @@ export default function CriarArtigo({ onVoltar, onSalvar, inicial, saving = fals
   }
 
   /* ── Capa ── */
-  function handleCapaChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleCapaChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => { setCapa(ev.target?.result as string); scheduleAutoSave(); };
-    reader.readAsDataURL(file);
+    try {
+      const url = await uploadMedia(file);
+      setCapa(url);
+      scheduleAutoSave();
+    } catch {
+      // silently keep existing capa
+    }
   }
 
   function handleCapaMouseDown(e: React.MouseEvent) {

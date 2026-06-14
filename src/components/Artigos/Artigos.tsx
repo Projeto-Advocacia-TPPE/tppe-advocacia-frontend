@@ -1,17 +1,61 @@
-import { useState, useCallback, useRef } from 'react';
-import { artigos } from '../../data';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { apiRequest } from '../../services/api';
+import type { PaginatedResponse } from '../../services/api';
+import { artigos as staticArtigos } from '../../data';
 import styles from './Artigos.module.css';
 
-const PER_PAGE   = 3;
-const TOTAL      = artigos.length;
-const totalPages = Math.ceil(TOTAL / PER_PAGE);
+interface ArtigoPublico {
+  id: number;
+  title: string;
+  summary: string | null;
+  status: string;
+  created_at: string;
+  url: string;
+}
+
+interface ArtigoItem {
+  id: number;
+  title: string;
+  excerpt: string;
+  date: string;
+}
+
+function toItem(a: ArtigoPublico): ArtigoItem {
+  return {
+    id: a.id,
+    title: a.title,
+    excerpt: a.summary ?? '',
+    date: new Date(a.created_at).toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    }),
+  };
+}
+
+const PER_PAGE = 3;
 
 export default function Artigos() {
-  const [startIndex, setStartIndex]   = useState(0);
-  const [nextIndex, setNextIndex]     = useState(0);
-  const [animating, setAnimating]     = useState(false);
-  const [direction, setDirection]     = useState<'left' | 'right'>('left');
-  const timeoutRef                    = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [artigos, setArtigos] = useState<ArtigoItem[]>(
+    staticArtigos.map(a => ({ id: a.id, title: a.title, excerpt: a.excerpt, date: a.date })),
+  );
+
+  const [startIndex, setStartIndex] = useState(0);
+  const [nextIndex,  setNextIndex]  = useState(0);
+  const [animating,  setAnimating]  = useState(false);
+  const [direction,  setDirection]  = useState<'left' | 'right'>('left');
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    apiRequest<PaginatedResponse<ArtigoPublico>>('/articles?limit=100', { authenticated: false })
+      .then(res => {
+        if (res.data.length > 0) setArtigos(res.data.map(toItem));
+      })
+      .catch(() => {});
+  }, []);
+
+  const TOTAL      = artigos.length;
+  const totalPages = Math.max(1, Math.ceil(TOTAL / PER_PAGE));
 
   function go(next: number, dir: 'left' | 'right') {
     if (animating || next === startIndex) return;
@@ -25,16 +69,14 @@ export default function Artigos() {
     }, 400);
   }
 
-  // Setas laterais: 1 artigo por vez
   const prevCarousel = useCallback(() => {
     go(Math.max(0, startIndex - 1), 'right');
   }, [startIndex, animating]);
 
   const nextCarousel = useCallback(() => {
     go(Math.min(TOTAL - PER_PAGE, startIndex + 1), 'left');
-  }, [startIndex, animating]);
+  }, [startIndex, animating, TOTAL]);
 
-  // Paginação: 3 artigos por vez
   const currentPage = Math.floor(startIndex / PER_PAGE);
 
   const prevPage = useCallback(() => {
@@ -43,23 +85,19 @@ export default function Artigos() {
 
   const nextPage = useCallback(() => {
     go(Math.min(TOTAL - PER_PAGE, startIndex + PER_PAGE), 'left');
-  }, [startIndex, animating]);
+  }, [startIndex, animating, TOTAL]);
 
   const goToPage = useCallback((page: number) => {
     const next = page * PER_PAGE;
     go(next, next > startIndex ? 'left' : 'right');
   }, [startIndex, animating]);
 
-  // Fatia atual e próxima (para o slide duplo)
   const currentSlice = artigos.slice(startIndex, startIndex + PER_PAGE);
   const nextSlice    = artigos.slice(nextIndex,   nextIndex   + PER_PAGE);
 
   const from = startIndex + 1;
   const to   = Math.min(startIndex + PER_PAGE, TOTAL);
 
-  // O track tem largura dupla e desliza
-  // Se dir=left:  [current | next]  → desliza para -50%
-  // Se dir=right: [next | current]  → começa em -50%, desliza para 0
   const trackStyle: React.CSSProperties = animating
     ? {
         transform:  direction === 'left' ? 'translateX(-50%)' : 'translateX(0%)',
@@ -70,11 +108,10 @@ export default function Artigos() {
         transition: 'none',
       };
 
-  // Posição inicial do track (sem transição) antes de animar
   const trackInitialStyle: React.CSSProperties = !animating
     ? { transform: 'translateX(0%)', transition: 'none' }
     : direction === 'left'
-    ? { transform: 'translateX(0%)'  }
+    ? { transform: 'translateX(0%)' }
     : { transform: 'translateX(-50%)' };
 
   const firstGrid  = direction === 'left' ? currentSlice : nextSlice;

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 // Auth
 import Login from './pages/auth/Login';
@@ -16,6 +16,7 @@ import Sobre from './components/Sobre/Sobre';
 import Artigos from './components/Artigos/Artigos';
 import Contato from './components/Contato/Contato';
 import Footer from './components/Footer/Footer';
+import { OfficeConfigProvider } from './contexts/OfficeConfigContext';
 
 // Sistema
 import SistemaLayout from './layouts/SistemaLayout';
@@ -32,7 +33,7 @@ import Artigos_ from './pages/sistema/Artigos_/Artigos';
 
 function LandingPage() {
   return (
-    <>
+    <OfficeConfigProvider>
       <Navbar />
       <main>
         <Hero />
@@ -44,7 +45,7 @@ function LandingPage() {
         <Contato />
       </main>
       <Footer />
-    </>
+    </OfficeConfigProvider>
   );
 }
 
@@ -52,9 +53,8 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Landing page */}
-        {/* Redirect root to sistema */}
-        <Route path="/" element={<Navigate to="/sistema" replace />} />
+        {/* Landing page pública */}
+        <Route path="/" element={<LandingPage />} />
 
         {/* Auth */}
         <Route path="/login" element={<Login />} />

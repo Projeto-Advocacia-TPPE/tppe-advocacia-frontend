@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Eye, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
-import Modal from '../../../components/sistema/Modal/Modal';
+import { Plus, Eye, Pencil, EyeOff, Globe, ChevronLeft, ChevronRight } from 'lucide-react';
 import CriarArtigo from './CriarArtigo';
 import VisualizarArtigo from './VisualizarArtigo';
 import {
@@ -8,7 +7,6 @@ import {
   buscarArtigo,
   criarArtigo,
   atualizarArtigo,
-  excluirArtigo,
   listItemToArtigo,
   detailToArtigo,
   buildCreatePayload,
@@ -18,7 +16,6 @@ import type { Artigo } from './types';
 import styles from '../Usuarios/Usuarios.module.css';
 
 type View = 'lista' | 'criar' | 'editar' | 'ver';
-type ModalType = 'excluir' | null;
 
 const STATUS_BADGE: Record<string, { bg: string; color: string }> = {
   'RASCUNHO':  { bg: '#e8eaf6', color: '#3949ab' },
@@ -31,7 +28,6 @@ export default function Artigos() {
   const [loading, setLoading]       = useState(true);
   const [saving, setSaving]         = useState(false);
   const [erro, setErro]             = useState<string | null>(null);
-  const [modalType, setModalType]   = useState<ModalType>(null);
   const [selected, setSelected]     = useState<(Artigo & { conteudo?: string }) | null>(null);
   const [page, setPage]             = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -79,8 +75,15 @@ export default function Artigos() {
     }
   }
 
-  function openExcluir(a: Artigo) { setSelected(a); setModalType('excluir'); }
-  function closeModal()            { setModalType(null); setSelected(null); }
+  async function toggleStatus(a: Artigo) {
+    const novoStatus = a.status === 'PUBLICADO' ? 'RASCUNHO' : 'PUBLICADO';
+    try {
+      const atualizado = await atualizarArtigo(a.id, buildUpdatePayload({ status: novoStatus }));
+      setArtigos(prev => prev.map(x => x.id === a.id ? detailToArtigo(atualizado) : x));
+    } catch (e: any) {
+      setErro(e.message ?? 'Erro ao alterar status.');
+    }
+  }
 
   /* ── Salvar novo ── */
   async function salvarNovo(dados: Omit<Artigo, 'id' | 'data' | 'ultimaEdicao'> & { conteudo?: string }) {
@@ -263,8 +266,12 @@ export default function Artigos() {
                       <button className={styles.iconBtn} onClick={() => openEditar(a)} title="Editar">
                         <Pencil size={16} />
                       </button>
-                      <button className={`${styles.iconBtn} ${styles.danger}`} onClick={() => openExcluir(a)} title="Excluir">
-                        <Trash2 size={16} />
+                      <button
+                        className={styles.iconBtn}
+                        onClick={() => toggleStatus(a)}
+                        title={a.status === 'PUBLICADO' ? 'Despublicar' : 'Publicar'}
+                      >
+                        {a.status === 'PUBLICADO' ? <EyeOff size={16} /> : <Globe size={16} />}
                       </button>
                     </div>
                   </td>
@@ -299,18 +306,6 @@ export default function Artigos() {
         </div>
       </div>
 
-      {/* Modal Excluir */}
-      {modalType === 'excluir' && selected && (
-        <Modal title="Excluir Artigo" onClose={closeModal} width={420}>
-          <p className={styles.deleteText}>
-            Tem certeza que deseja excluir o artigo <strong>{selected.titulo}</strong>? Esta ação não pode ser desfeita.
-          </p>
-          <div className={styles.modalFooter}>
-            <button className={styles.btnCancel} onClick={closeModal}>Cancelar</button>
-            <button className={styles.btnDanger} onClick={confirmarExclusao}>Confirmar</button>
-          </div>
-        </Modal>
-      )}
     </div>
   );
 }

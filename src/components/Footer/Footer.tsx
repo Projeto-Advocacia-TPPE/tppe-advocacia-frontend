@@ -1,3 +1,4 @@
+import { useOfficeConfig } from '../../contexts/OfficeConfigContext';
 import styles from './Footer.module.css';
 
 const LINKS = [
@@ -10,6 +11,12 @@ const LINKS = [
 ];
 
 export default function Footer() {
+  const { config } = useOfficeConfig();
+
+  const linkedinUrl  = config?.linkedin_url  ?? '#';
+  const instagramUrl = config?.instagram_url ?? '#';
+  const oab          = config?.lawyer_oab    ?? 'OAB/SP 123.456';
+
   return (
     <footer className={styles.footer}>
       <div className={styles.inner}>
@@ -26,13 +33,13 @@ export default function Footer() {
         </ul>
 
         <div className={styles.social}>
-          <a href="#" className={styles.link}>LinkedIn</a>
-          <a href="#" className={styles.link}>Instagram</a>
+          <a href={linkedinUrl}  className={styles.link} target="_blank" rel="noopener noreferrer">LinkedIn</a>
+          <a href={instagramUrl} className={styles.link} target="_blank" rel="noopener noreferrer">Instagram</a>
         </div>
       </div>
 
       <div className={styles.bottom}>
-        <span>OAB/SP 123.456</span>
+        <span>{oab}</span>
         <span>© 2026 Vitor França. Todos os direitos reservados.</span>
       </div>
     </footer>
