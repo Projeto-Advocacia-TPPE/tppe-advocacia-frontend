@@ -1,19 +1,26 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import { apiRequest } from '../../services/api';
 import type { SuccessResponse } from '../../services/api';
-import styles from './ArtigoPage.module.css';
+import styles from '../sistema/Artigos_/VisualizarArtigo.module.css';
 
 interface ArticleDetail {
   id: number;
   title: string;
   content: string;
-  category: string;
+  category: string | null;
   summary: string | null;
   cover_image_url: string | null;
   status: string;
   author_name: string;
   created_at: string;
+}
+
+function calcLeitura(html: string = ''): number {
+  const text = html.replace(/<[^>]*>/g, ' ');
+  const words = text.trim().split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.round(words / 200));
 }
 
 export default function ArtigoPage() {
@@ -37,63 +44,117 @@ export default function ArtigoPage() {
       })
     : '';
 
+  const leitura = artigo ? calcLeitura(artigo.content) : 0;
+
   if (loading) {
     return (
-      <div className={styles.page}>
-        <div className={styles.container}>
-          <div className={styles.skeleton} style={{ height: 20, width: '30%', marginBottom: 40 }} />
-          <div className={styles.skeleton} style={{ height: 40, width: '80%', marginBottom: 16 }} />
-          <div className={styles.skeleton} style={{ height: 20, width: '40%', marginBottom: 40 }} />
-          <div className={styles.skeleton} style={{ height: 320, marginBottom: 40 }} />
-          {[90, 100, 85, 95, 70].map((w, i) => (
-            <div key={i} className={styles.skeleton} style={{ height: 16, width: `${w}%`, marginBottom: 12 }} />
-          ))}
-        </div>
+      <div className={styles.shell} style={{ margin: 0 }}>
+        <header className={styles.navbar}>
+          <div className={styles.navLeft}>
+            <span className={styles.navBrand}>Carregando artigo...</span>
+          </div>
+        </header>
+        <article className={styles.article}>
+          <div style={{ maxWidth: 700, margin: '48px auto', padding: '0 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {[30, 80, 60, 100, 95, 85, 70].map((w, i) => (
+              <div key={i} style={{
+                height: i === 1 ? 36 : 14,
+                width: `${w}%`,
+                background: 'linear-gradient(90deg,#e8e8e8 25%,#f0f0f0 50%,#e8e8e8 75%)',
+                backgroundSize: '200% 100%',
+                borderRadius: 4,
+                animation: 'shimmer 1.4s infinite',
+              }} />
+            ))}
+          </div>
+        </article>
       </div>
     );
   }
 
   if (erro || !artigo) {
     return (
-      <div className={styles.page}>
-        <div className={styles.container}>
-          <Link to="/#artigos" className={styles.back}>← Voltar aos artigos</Link>
-          <p className={styles.erro}>{erro ?? 'Artigo não encontrado.'}</p>
-        </div>
+      <div className={styles.shell} style={{ margin: 0 }}>
+        <header className={styles.navbar}>
+          <div className={styles.navLeft}>
+            <a href="/#artigos" className={styles.btnVoltar} style={{ textDecoration: 'none' }}>
+              <ArrowLeft size={15} /> Voltar aos artigos
+            </a>
+          </div>
+        </header>
+        <article className={styles.article}>
+          <p style={{ maxWidth: 700, margin: '48px auto', padding: '0 24px', color: 'var(--crimson, #c0392b)' }}>
+            {erro ?? 'Artigo não encontrado.'}
+          </p>
+        </article>
       </div>
     );
   }
 
   return (
-    <div className={styles.page}>
-      <div className={styles.container}>
-        <Link to="/#artigos" className={styles.back}>← Voltar aos artigos</Link>
+    <div className={styles.shell} style={{ margin: 0 }}>
+
+      <header className={styles.navbar}>
+        <div className={styles.navLeft}>
+          <a href="/#artigos" className={styles.btnVoltar} style={{ textDecoration: 'none' }}>
+            <ArrowLeft size={15} /> Voltar aos artigos
+          </a>
+        </div>
+      </header>
+
+      <article className={styles.article}>
 
         {artigo.category && (
-          <span className={styles.category}>{artigo.category}</span>
+          <div className={styles.category}>
+            <span className={styles.categoryLine} />
+            <span className={styles.categoryText}>{artigo.category.toUpperCase()}</span>
+          </div>
         )}
 
         <h1 className={styles.title}>{artigo.title}</h1>
 
         <div className={styles.meta}>
-          <span className={styles.author}>{artigo.author_name}</span>
-          <span className={styles.dot}>·</span>
-          <span className={styles.date}>{data}</span>
+          <div className={styles.metaAuthor}>
+            <div className={styles.avatar}>
+              {artigo.author_name?.charAt(0).toUpperCase() || 'A'}
+            </div>
+            <div>
+              <div className={styles.authorName}>{artigo.author_name}</div>
+              <div className={styles.authorRole}>Advogado</div>
+            </div>
+          </div>
+          <div className={styles.metaDivider} />
+          <div className={styles.metaBlock}>
+            <span className={styles.metaLabel}>DATA DE PUBLICAÇÃO</span>
+            <span className={styles.metaValue}>{data}</span>
+          </div>
+          <div className={styles.metaDivider} />
+          <div className={styles.metaBlock}>
+            <span className={styles.metaLabel}>LEITURA ESTIMADA</span>
+            <span className={styles.metaValue}>{leitura} {leitura === 1 ? 'minuto' : 'minutos'}</span>
+          </div>
         </div>
 
         {artigo.cover_image_url && (
-          <img src={artigo.cover_image_url} alt={artigo.title} className={styles.cover} />
+          <div className={styles.coverWrap}>
+            <img src={artigo.cover_image_url} alt={artigo.title} className={styles.cover} />
+          </div>
         )}
 
-        {artigo.content ? (
-          <div
-            className={styles.content}
-            dangerouslySetInnerHTML={{ __html: artigo.content }}
-          />
-        ) : artigo.summary ? (
-          <p className={styles.summary}>{artigo.summary}</p>
-        ) : null}
-      </div>
+        <div className={styles.body}>
+          {artigo.content ? (
+            <div
+              className={styles.content}
+              dangerouslySetInnerHTML={{ __html: artigo.content }}
+            />
+          ) : artigo.summary ? (
+            <p className={styles.resumoFallback}>{artigo.summary}</p>
+          ) : (
+            <p className={styles.empty}>Nenhum conteúdo disponível.</p>
+          )}
+        </div>
+
+      </article>
     </div>
   );
 }

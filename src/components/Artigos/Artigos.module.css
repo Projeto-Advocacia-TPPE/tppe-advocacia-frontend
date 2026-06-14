@@ -46,19 +46,36 @@
   overflow: hidden;
 }
 
-/* O track tem largura dupla e contém dois grids lado a lado */
-.track {
-  display: flex;
-  width: 200%;
-}
-
-/* Cada grid ocupa metade do track (= 100% do wrap) */
 .grid {
-  width: 50%;
-  flex-shrink: 0;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 36px;
+}
+
+/* Animação de entrada */
+@keyframes slideInLeft {
+  from { transform: translateX(40px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+@keyframes slideInRight {
+  from { transform: translateX(-40px); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+.slideLeft  { animation: slideInLeft  0.35s cubic-bezier(0.4, 0, 0.2, 1) both; }
+.slideRight { animation: slideInRight 0.35s cubic-bezier(0.4, 0, 0.2, 1) both; }
+
+/* Skeleton */
+.skeletonRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 36px;
+  margin-bottom: 48px;
+}
+.skeletonCard { display: flex; flex-direction: column; }
+.skeletonLine {
+  height: 12px;
+  border-radius: 4px;
+  background: rgba(255,255,255,.1);
 }
 
 /* Cards */
