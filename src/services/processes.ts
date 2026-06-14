@@ -56,6 +56,24 @@ export type ProcessCreate = {
   opposing_party: string | null;
 };
 
+export type MovementCreate = {
+  title: string;
+  description?: string;
+  occurred_at?: string;
+};
+
+export type ProcessNote = {
+  id: number;
+  process_id: number;
+  created_by: number | null;
+  updated_by: number | null;
+  created_by_name: string | null;
+  updated_by_name: string | null;
+  content: string;
+  created_at: string;
+  updated_at: string;
+};
+
 export type DataJudSyncResult = {
   process_id: number;
   process_number: string;
@@ -109,6 +127,20 @@ export async function listMovements(
   return apiRequest(`/processes/${processId}/movements?limit=100`);
 }
 
+export async function createMovement(
+  processId: number,
+  payload: MovementCreate,
+): Promise<Movement> {
+  const response = await apiRequest<SuccessResponse<Movement>>(
+    `/processes/${processId}/movements`,
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
+  );
+  return response.data;
+}
+
 export async function changeProcessStatus(
   processId: number,
   status: ProcessStatus,
@@ -131,6 +163,41 @@ export async function syncProcessWithDataJud(
     {
       method: 'POST',
       body: JSON.stringify({}),
+    },
+  );
+  return response.data;
+}
+
+export async function listProcessNotes(
+  processId: number,
+): Promise<PaginatedResponse<ProcessNote>> {
+  return apiRequest(`/processes/${processId}/notes?limit=100`);
+}
+
+export async function createProcessNote(
+  processId: number,
+  content: string,
+): Promise<ProcessNote> {
+  const response = await apiRequest<SuccessResponse<ProcessNote>>(
+    `/processes/${processId}/notes`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    },
+  );
+  return response.data;
+}
+
+export async function updateProcessNote(
+  processId: number,
+  noteId: number,
+  content: string,
+): Promise<ProcessNote> {
+  const response = await apiRequest<SuccessResponse<ProcessNote>>(
+    `/processes/${processId}/notes/${noteId}`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ content }),
     },
   );
   return response.data;
