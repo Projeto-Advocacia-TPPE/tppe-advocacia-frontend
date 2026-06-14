@@ -202,3 +202,29 @@ export async function updateProcessNote(
   );
   return response.data;
 }
+
+export type BulkSyncResult = {
+  tribunal_alias: string | null;
+  total_active_processes: number;
+  processed_count: number;
+  success_count: number;
+  failure_count: number;
+  imported_count: number;
+  skipped_count: number;
+  synced_at: string;
+  results: unknown[];
+};
+
+export async function syncActiveProcesses(params: {
+  tribunal_alias?: string | null;
+  limit?: number;
+} = {}): Promise<BulkSyncResult> {
+  const response = await apiRequest<SuccessResponse<BulkSyncResult>>(
+    '/datajud/sync-active-processes',
+    {
+      method: 'POST',
+      body: JSON.stringify(params),
+    },
+  );
+  return response.data;
+}
