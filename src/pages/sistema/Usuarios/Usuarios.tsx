@@ -113,8 +113,12 @@ export default function Usuarios() {
     setSubmitting(true);
     setFormError('');
     try {
-      const res = await createUser(formNome.trim(), formEmail.trim());
-      setUsuarios(prev => [res.data, ...prev]);
+      const created = await createUser(formNome.trim(), formEmail.trim());
+      // POST /api/v1/users sempre cria como USER; promoção a ADMIN requer PATCH subsequente
+      const final = formRole === 'ADMIN'
+        ? (await updateUser(created.data.id, { role: 'ADMIN' })).data
+        : created.data;
+      setUsuarios(prev => [final, ...prev]);
       setTotalUsuarios(prev => prev + 1);
       closeModal();
     } catch (err) {

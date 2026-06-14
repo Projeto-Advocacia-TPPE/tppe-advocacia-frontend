@@ -123,7 +123,7 @@ export default function ResetPassword() {
               </button>
             </>
           ) : (
-            <>
+            <form onSubmit={(e) => { e.preventDefault(); void handleSubmit(); }}>
               <h1 className={styles.cardTitle} style={{ textAlign: 'left', fontSize: '1.4rem' }}>
                 Redefinir senha
               </h1>
@@ -146,15 +146,15 @@ export default function ResetPassword() {
               />
 
               <button
+                type="submit"
                 className={styles.btnSubmit}
-                onClick={() => void handleSubmit()}
                 disabled={loading || !novaSenha || !confirma}
               >
                 {loading ? 'Salvando...' : 'Redefinir senha'}
               </button>
 
               {erro && <p className={styles.errorMsg}>{erro}</p>}
-            </>
+            </form>
           )}
         </div>
       </div>
