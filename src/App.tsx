@@ -50,6 +50,7 @@ import Processos from './pages/sistema/Processos/Processos';
 import Tarefas from './pages/sistema/Tarefas';
 import Dashboard from './pages/sistema/Dashboard/Dashboard';
 import Artigos_ from './pages/sistema/Artigos_/Artigos';
+import LogsAPI from './pages/sistema/LogsAPI/LogsAPI';
 
 function LandingPage() {
   return (
@@ -99,6 +100,9 @@ export default function App() {
             <Route path="processos" element={<Processos />} />
             <Route path="tarefas" element={<Tarefas />} />
             <Route path="notificacoes" element={<Notificacoes />} />
+            <Route element={<AdminRoute />}>
+              <Route path="logs-api" element={<LogsAPI />} />
+            </Route>
           </Route>
         </Route>
       </Routes>

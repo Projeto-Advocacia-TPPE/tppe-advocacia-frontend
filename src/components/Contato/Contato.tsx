@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { FormEvent, ChangeEvent } from 'react';
+import { X } from 'lucide-react';
 import { ApiError } from '../../services/api';
 import { createLead } from '../../services/leads';
 import { useOfficeConfig } from '../../contexts/OfficeConfigContext';
@@ -31,6 +32,20 @@ export default function Contato() {
   const [sent, setSent]           = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError]         = useState('');
+  const [showTermo, setShowTermo] = useState(false);
+
+  const closeTermo = useCallback(() => setShowTermo(false), []);
+
+  useEffect(() => {
+    if (!showTermo) return;
+    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeTermo(); };
+    document.addEventListener('keydown', handleKey);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', handleKey);
+      document.body.style.overflow = '';
+    };
+  }, [showTermo, closeTermo]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const value = e.target instanceof HTMLInputElement && e.target.type === 'checkbox'
@@ -155,8 +170,15 @@ export default function Contato() {
                     required
                   />
                   <span>
-                    Autorizo o uso dos meus dados para que o escritório entre em contato
-                    sobre esta solicitação.
+                    Li e concordo com o{' '}
+                    <button
+                      type="button"
+                      className={styles.termoLink}
+                      onClick={() => setShowTermo(true)}
+                    >
+                      Termo de Consentimento
+                    </button>
+                    , autorizando o uso dos meus dados para contato sobre esta solicitação.
                   </span>
                 </label>
                 {error && <p className={styles.formError}>{error}</p>}
@@ -173,6 +195,92 @@ export default function Contato() {
 
         </div>
       </div>
+
+      {showTermo && (
+        <div className={styles.termoOverlay} onClick={closeTermo} role="dialog" aria-modal="true" aria-label="Termo de Consentimento LGPD">
+          <div className={styles.termoModal} onClick={e => e.stopPropagation()}>
+            <div className={styles.termoHeader}>
+              <h3>Termo de Consentimento para Tratamento de Dados Pessoais</h3>
+              <button className={styles.termoClose} onClick={closeTermo} aria-label="Fechar termo">
+                <X size={18} />
+              </button>
+            </div>
+            <div className={styles.termoBody}>
+              <p className={styles.termoIntro}>
+                Em conformidade com a Lei nº 13.709/2018 (Lei Geral de Proteção de Dados — LGPD),
+                informamos como tratamos os dados pessoais coletados neste formulário.
+              </p>
+
+              <div className={styles.termoSection}>
+                <h4>1. Controlador dos dados</h4>
+                <p>
+                  <strong>{config?.office_name ?? 'Este escritório de advocacia'}</strong>
+                  {config?.email ? `, contactável pelo e-mail ${config.email}` : ''}, é o responsável
+                  pelo tratamento dos seus dados pessoais coletados por meio deste formulário.
+                </p>
+              </div>
+
+              <div className={styles.termoSection}>
+                <h4>2. Dados coletados</h4>
+                <ul>
+                  <li><strong>Nome completo</strong> — obrigatório</li>
+                  <li><strong>E-mail</strong> — obrigatório</li>
+                  <li><strong>Telefone</strong> — opcional</li>
+                  <li><strong>Mensagem</strong> — opcional</li>
+                </ul>
+              </div>
+
+              <div className={styles.termoSection}>
+                <h4>3. Finalidade do tratamento</h4>
+                <p>
+                  Os dados coletados são utilizados exclusivamente para responder à sua solicitação
+                  de contato e prestar as informações jurídicas solicitadas. Não são utilizados
+                  para fins de marketing, compartilhados com terceiros ou vendidos.
+                </p>
+              </div>
+
+              <div className={styles.termoSection}>
+                <h4>4. Base legal</h4>
+                <p>
+                  O tratamento é baseado no seu <strong>consentimento livre e informado</strong>
+                  {' '}(art. 7º, inciso I, da LGPD). Você pode revogar esse consentimento a qualquer
+                  momento por meio dos canais de contato do escritório.
+                </p>
+              </div>
+
+              <div className={styles.termoSection}>
+                <h4>5. Prazo de retenção</h4>
+                <p>
+                  Seus dados serão mantidos pelo período necessário ao atendimento da solicitação
+                  ou pelo prazo mínimo exigido por obrigações legais. Após o término do prazo, os
+                  dados são eliminados de forma segura.
+                </p>
+              </div>
+
+              <div className={styles.termoSection}>
+                <h4>6. Seus direitos como titular</h4>
+                <p>Nos termos dos arts. 17 a 22 da LGPD, você tem direito a:</p>
+                <ul>
+                  <li>Confirmar a existência de tratamento dos seus dados;</li>
+                  <li>Acessar os dados que temos sobre você;</li>
+                  <li>Corrigir dados incompletos, inexatos ou desatualizados;</li>
+                  <li>Solicitar a eliminação dos dados tratados com base no seu consentimento;</li>
+                  <li>Revogar o consentimento a qualquer momento;</li>
+                  <li>Obter informações sobre com quem compartilhamos seus dados.</li>
+                </ul>
+                <p>
+                  Para exercer esses direitos, entre em contato pelo e-mail{' '}
+                  <strong>{config?.email ?? 'indicado no site do escritório'}</strong>.
+                </p>
+              </div>
+
+              <button className={styles.termoCta} onClick={() => { setShowTermo(false); if (!form.consentimento) setForm(prev => ({ ...prev, consentimento: true })); }}>
+                Entendi e aceito os termos
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

@@ -11,6 +11,7 @@ import {
   Briefcase,
   LayoutList,
   Bell,
+  Activity,
   User,
   PanelLeftClose,
   PanelLeftOpen,
@@ -31,6 +32,7 @@ const NAV_ITEMS = [
   { label: 'Processos',     href: '/sistema/processos',      icon: Briefcase,    adminOnly: false },
   { label: 'Tarefas',       href: '/sistema/tarefas',        icon: LayoutList,   adminOnly: false },
   { label: 'Notificações',  href: '/sistema/notificacoes',   icon: Bell,         adminOnly: false },
+  { label: 'Logs de API',   href: '/sistema/logs-api',       icon: Activity,     adminOnly: true  },
 ];
 
 export default function Sidebar() {

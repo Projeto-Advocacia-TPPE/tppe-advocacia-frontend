@@ -200,6 +200,15 @@
 .pageNum:hover { background: #f5f5f5; }
 .pageActive { background: var(--navy) !important; color: var(--white) !important; border-color: var(--navy) !important; }
 
+.toggleDisabled { opacity: .45; cursor: not-allowed; }
+
+.prefsHint {
+  margin-left: auto;
+  font-size: .75rem;
+  color: var(--gray);
+  font-weight: 400;
+}
+
 /* Responsive */
 @media (max-width: 900px) {
   .configRow { grid-template-columns: 1fr; }
