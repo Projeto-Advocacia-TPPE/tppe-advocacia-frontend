@@ -176,7 +176,7 @@ export default function Contato() {
                       className={styles.termoLink}
                       onClick={() => setShowTermo(true)}
                     >
-                      Termo de Consentimento LGPD
+                      Termo de Consentimento
                     </button>
                     , autorizando o uso dos meus dados para contato sobre esta solicitação.
                   </span>
