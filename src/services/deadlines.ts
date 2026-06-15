@@ -44,3 +44,25 @@ export async function updateDeadline(deadlineId: number, payload: DeadlineWrite)
 export async function deleteDeadline(deadlineId: number): Promise<void> {
   await apiRequest(`/deadlines/${deadlineId}`, { method: 'DELETE' });
 }
+
+export type DeadlineCalculateResult = {
+  start_date: string;
+  business_days: number;
+  due_date: string;
+  court: string | null;
+  comarca: string | null;
+  skipped_days: { date: string; reason: 'WEEKEND' | 'HOLIDAY'; description: string | null }[];
+};
+
+export async function calculateDeadline(params: {
+  start_date: string;
+  business_days: number;
+  court?: string | null;
+  comarca?: string | null;
+}): Promise<DeadlineCalculateResult> {
+  const response = await apiRequest<SuccessResponse<DeadlineCalculateResult>>('/deadlines/calculate', {
+    method: 'POST',
+    body: JSON.stringify(params),
+  });
+  return response.data;
+}
