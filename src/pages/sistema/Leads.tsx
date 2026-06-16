@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { useFeedback } from '../../hooks/useFeedback';
+import { useAsyncAction } from '../../hooks/useAsyncAction';
 import {
   CheckCircle2,
   ChevronLeft,
@@ -66,17 +68,16 @@ export default function Leads() {
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
   const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [selected, setSelected] = useState<Lead | null>(null);
   const [updating, setUpdating] = useState(false);
-  const [feedback, setFeedback] = useState<{ message: string; kind: 'success' | 'error' } | null>(null);
   const [statusTotals, setStatusTotals] = useState({ novo: 0, em_atendimento: 0, fechado: 0 });
+  const { feedback, showFeedback } = useFeedback();
+  const { loading, refreshing, run } = useAsyncAction(
+    (error) => showFeedback(errorMessage(error), 'error'),
+  );
 
   async function loadData(isRefresh = false) {
-    if (isRefresh) setRefreshing(true);
-    else setLoading(true);
-    try {
+    await run(async () => {
       const [response, novos, emAtendimento, fechados] = await Promise.all([
         listLeads({ page, limit: 12, status, assignedTo }),
         listLeads({ page: 1, limit: 1, status: 'novo' }),
@@ -91,12 +92,7 @@ export default function Leads() {
         em_atendimento: emAtendimento.meta.total,
         fechado: fechados.meta.total,
       });
-    } catch (error) {
-      setFeedback({ message: errorMessage(error), kind: 'error' });
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
+    }, isRefresh);
   }
 
   useEffect(() => {
@@ -108,11 +104,6 @@ export default function Leads() {
       .then(response => setUsers(response.data))
       .catch(() => setUsers([]));
   }, []);
-
-  function showFeedback(message: string, kind: 'success' | 'error' = 'success') {
-    setFeedback({ message, kind });
-    window.setTimeout(() => setFeedback(null), 4500);
-  }
 
   async function handleUpdate(payload: { status?: LeadStatus; assigned_to?: number }) {
     if (!selected) return;

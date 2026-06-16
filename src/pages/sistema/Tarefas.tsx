@@ -1,4 +1,6 @@
 import { DragEvent, FormEvent, useEffect, useMemo, useState } from 'react';
+import { useFeedback } from '../../hooks/useFeedback';
+import { useAsyncAction } from '../../hooks/useAsyncAction';
 import {
   AlertCircle,
   ArrowLeft,
@@ -131,8 +133,10 @@ function errorMessage(error: unknown): string {
 
 export default function Tarefas() {
   const [kanban, setKanban] = useState<TaskKanban>(emptyKanban);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const { feedback, showFeedback } = useFeedback();
+  const { loading, refreshing, run } = useAsyncAction(
+    (error) => showFeedback(errorMessage(error), 'error'),
+  );
   const [movingId, setMovingId] = useState<number | null>(null);
   const [draggingId, setDraggingId] = useState<number | null>(null);
   const [dropTarget, setDropTarget] = useState<TaskStatus | null>(null);
@@ -150,7 +154,6 @@ export default function Tarefas() {
   const [deletingTask, setDeletingTask] = useState<Task | null>(null);
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
-  const [feedback, setFeedback] = useState<{ message: string; kind: 'success' | 'error' } | null>(null);
   const [columnPages, setColumnPages] = useState<Partial<Record<TaskStatus, number>>>({});
   const [loadingMore, setLoadingMore] = useState<Partial<Record<TaskStatus, boolean>>>({});
   const [dropInsertIndex, setDropInsertIndex] = useState<{ status: TaskStatus; index: number } | null>(null);
@@ -163,21 +166,14 @@ export default function Tarefas() {
   }), [kanban]);
 
   async function loadKanban(isRefresh = false) {
-    if (isRefresh) setRefreshing(true);
-    else setLoading(true);
-    try {
+    await run(async () => {
       setKanban(await getTaskKanban({
         assignedTo: assignedToFilter,
         clientId: clientFilter,
         processId: processFilter,
       }));
       setColumnPages({});
-    } catch (error) {
-      showFeedback(errorMessage(error), 'error');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
+    }, isRefresh);
   }
 
   useEffect(() => {
@@ -191,11 +187,6 @@ export default function Tarefas() {
   useEffect(() => {
     void loadKanban();
   }, [assignedToFilter, clientFilter, processFilter]);
-
-  function showFeedback(message: string, kind: 'success' | 'error' = 'success') {
-    setFeedback({ message, kind });
-    window.setTimeout(() => setFeedback(null), 4000);
-  }
 
   async function handleLoadMore(status: TaskStatus) {
     const nextPage = (columnPages[status] ?? 1) + 1;
