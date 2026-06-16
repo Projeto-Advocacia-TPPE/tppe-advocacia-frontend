@@ -18,11 +18,10 @@ import { ApiError } from '../../services/api';
 import {
   Lead,
   LeadStatus,
-  listActiveUsers,
   listLeads,
   updateLead,
-  UserOption,
 } from '../../services/leads';
+import { ApiUser, listActiveUsers } from '../../services/users';
 import styles from './Leads.module.css';
 
 const STATUS_OPTIONS: LeadStatus[] = ['novo', 'em_atendimento', 'fechado', 'descartado'];
@@ -61,7 +60,7 @@ function errorMessage(error: unknown): string {
 
 export default function Leads() {
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [users, setUsers] = useState<UserOption[]>([]);
+  const [users, setUsers] = useState<ApiUser[]>([]);
   const [status, setStatus] = useState<LeadStatus | ''>('');
   const [assignedTo, setAssignedTo] = useState<number | ''>('');
   const [page, setPage] = useState(1);

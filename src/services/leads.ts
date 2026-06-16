@@ -25,14 +25,6 @@ export type LeadCreate = {
   message: string | null;
 };
 
-export type UserOption = {
-  id: number;
-  name: string;
-  email: string;
-  role: 'ADMIN' | 'USER';
-  is_active: boolean;
-};
-
 export async function createLead(payload: LeadCreate): Promise<Lead> {
   const response = await apiRequest<SuccessResponse<Lead>>('/leads', {
     method: 'POST',
@@ -68,6 +60,3 @@ export async function updateLead(
   return response.data;
 }
 
-export async function listActiveUsers(): Promise<PaginatedResponse<UserOption>> {
-  return apiRequest('/users?is_active=true&limit=100');
-}

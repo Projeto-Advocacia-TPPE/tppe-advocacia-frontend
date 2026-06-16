@@ -20,7 +20,7 @@ import {
 import Modal from '../../components/sistema/Modal/Modal';
 import { ApiError } from '../../services/api';
 import { ClientListItem, listClients } from '../../services/clients';
-import { UserOption, listActiveUsers } from '../../services/leads';
+import { ApiUser, listActiveUsers } from '../../services/users';
 import { ProcessListItem, listProcesses } from '../../services/processes';
 import {
   Task,
@@ -31,6 +31,7 @@ import {
   createTask,
   deleteTask,
   getTaskKanban,
+  listTasks,
   moveTask,
   updateTask,
 } from '../../services/tasks';
@@ -142,7 +143,7 @@ export default function Tarefas() {
   const [formError, setFormError] = useState('');
   const [clients, setClients] = useState<ClientListItem[]>([]);
   const [processes, setProcesses] = useState<ProcessListItem[]>([]);
-  const [users, setUsers] = useState<UserOption[]>([]);
+  const [users, setUsers] = useState<ApiUser[]>([]);
   const [assignedToFilter, setAssignedToFilter] = useState<number | ''>('');
   const [clientFilter, setClientFilter] = useState<number | ''>('');
   const [processFilter, setProcessFilter] = useState<number | ''>('');
@@ -150,6 +151,9 @@ export default function Tarefas() {
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const [feedback, setFeedback] = useState<{ message: string; kind: 'success' | 'error' } | null>(null);
+  const [columnPages, setColumnPages] = useState<Partial<Record<TaskStatus, number>>>({});
+  const [loadingMore, setLoadingMore] = useState<Partial<Record<TaskStatus, boolean>>>({});
+  const [dropInsertIndex, setDropInsertIndex] = useState<{ status: TaskStatus; index: number } | null>(null);
 
   const metrics = useMemo(() => ({
     total: STATUS_ORDER.reduce((sum, status) => sum + kanban[status].total, 0),
@@ -167,6 +171,7 @@ export default function Tarefas() {
         clientId: clientFilter,
         processId: processFilter,
       }));
+      setColumnPages({});
     } catch (error) {
       showFeedback(errorMessage(error), 'error');
     } finally {
@@ -190,6 +195,33 @@ export default function Tarefas() {
   function showFeedback(message: string, kind: 'success' | 'error' = 'success') {
     setFeedback({ message, kind });
     window.setTimeout(() => setFeedback(null), 4000);
+  }
+
+  async function handleLoadMore(status: TaskStatus) {
+    const nextPage = (columnPages[status] ?? 1) + 1;
+    setLoadingMore(prev => ({ ...prev, [status]: true }));
+    try {
+      const result = await listTasks({
+        status,
+        assigned_to: assignedToFilter || undefined,
+        client_id: clientFilter || undefined,
+        process_id: processFilter || undefined,
+        page: nextPage,
+      });
+      setKanban(prev => ({
+        ...prev,
+        [status]: {
+          ...prev[status],
+          items: [...prev[status].items, ...result.data],
+          has_more: result.meta.page < result.meta.pages,
+        },
+      }));
+      setColumnPages(prev => ({ ...prev, [status]: nextPage }));
+    } catch (error) {
+      showFeedback(errorMessage(error), 'error');
+    } finally {
+      setLoadingMore(prev => ({ ...prev, [status]: false }));
+    }
   }
 
   async function handleMove(task: Task, status: TaskStatus, order: number) {
@@ -219,11 +251,22 @@ export default function Tarefas() {
     event.dataTransfer.setData('text/plain', String(task.id));
   }
 
+  function handleCardDragOver(event: DragEvent<HTMLElement>, status: TaskStatus, cardIndex: number) {
+    event.preventDefault();
+    event.stopPropagation();
+    const rect = event.currentTarget.getBoundingClientRect();
+    const insertIndex = event.clientY < rect.top + rect.height / 2 ? cardIndex : cardIndex + 1;
+    setDropTarget(status);
+    setDropInsertIndex({ status, index: insertIndex });
+  }
+
   function handleDrop(event: DragEvent<HTMLElement>, status: TaskStatus) {
     event.preventDefault();
     const taskId = Number(event.dataTransfer.getData('text/plain'));
     const task = STATUS_ORDER.flatMap(item => kanban[item].items).find(item => item.id === taskId);
-    if (task) void handleMove(task, status, kanban[status].items.length);
+    const order = dropInsertIndex?.status === status ? dropInsertIndex.index : kanban[status].items.length;
+    setDropInsertIndex(null);
+    if (task) void handleMove(task, status, order);
   }
 
   function updateForm<K extends keyof TaskForm>(field: K, value: TaskForm[K]) {
@@ -379,7 +422,10 @@ export default function Tarefas() {
               key={status}
               onDragOver={event => { event.preventDefault(); setDropTarget(status); }}
               onDragLeave={event => {
-                if (!event.currentTarget.contains(event.relatedTarget as Node)) setDropTarget(null);
+                if (!event.currentTarget.contains(event.relatedTarget as Node)) {
+                  setDropTarget(null);
+                  setDropInsertIndex(null);
+                }
               }}
               onDrop={event => handleDrop(event, status)}
             >
@@ -393,13 +439,18 @@ export default function Tarefas() {
 
               <div className={styles.taskList}>
                 {loading && <ColumnLoading />}
-                {!loading && column.items.map(task => (
-                  <article
-                    className={`${styles.taskCard} ${draggingId === task.id ? styles.dragging : ''}`}
-                    key={task.id}
-                    draggable={movingId === null}
-                    onDragStart={event => handleDragStart(event, task)}
-                    onDragEnd={() => { setDraggingId(null); setDropTarget(null); }}
+                {!loading && column.items.map((task, cardIndex) => (
+                  <div key={task.id} className={styles.cardWrapper}>
+                    {dropInsertIndex?.status === status && dropInsertIndex.index === cardIndex && draggingId !== null && (
+                      <div className={styles.dropInsert} aria-hidden="true" />
+                    )}
+                    <article
+                      className={`${styles.taskCard} ${draggingId === task.id ? styles.dragging : ''}`}
+                      key={task.id}
+                      draggable={movingId === null}
+                      onDragStart={event => handleDragStart(event, task)}
+                      onDragEnd={() => { setDraggingId(null); setDropTarget(null); setDropInsertIndex(null); }}
+                      onDragOver={event => handleCardDragOver(event, status, cardIndex)}
                   >
                     <div className={styles.taskTopline}>
                       <span className={`${styles.priority} ${styles[`priority${task.priority}`]}`}>
@@ -472,12 +523,27 @@ export default function Tarefas() {
                       </button>
                     </footer>
                   </article>
+                  </div>
                 ))}
+                {!loading && draggingId !== null && dropInsertIndex?.status === status && dropInsertIndex.index >= column.items.length && (
+                  <div className={styles.dropInsert} aria-hidden="true" />
+                )}
                 {!loading && column.items.length === 0 && (
                   <div className={styles.emptyColumn}>
                     <span className={`${styles.emptyIcon} ${styles[config.tone]}`}>{config.icon}</span>
                     <p>Nenhuma tarefa nesta etapa.</p>
                   </div>
+                )}
+                {!loading && column.has_more && (
+                  <button
+                    className={styles.loadMoreButton}
+                    disabled={!!loadingMore[status]}
+                    onClick={() => void handleLoadMore(status)}
+                  >
+                    {loadingMore[status]
+                      ? 'Carregando...'
+                      : `Ver mais (${column.total - column.items.length} restantes)`}
+                  </button>
                 )}
               </div>
             </section>
