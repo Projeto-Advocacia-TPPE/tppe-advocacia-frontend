@@ -31,23 +31,16 @@ const TYPE_COLOR: Record<AppointmentType, string> = {
   OUTRO: '#37474f',
 };
 
-const TIPOS_PRAZO = [
-  'Apelação Cível (15 dias úteis)',
-  'Contestação (15 dias úteis)',
-  'Recurso Especial (15 dias úteis)',
-  'Embargo de Declaração (5 dias úteis)',
-  'Agravo Interno (15 dias úteis)',
-  'Mandado de Segurança (120 dias)',
-];
+type PrazoConfig = { label: string; days: number; isCalendar: boolean };
 
-const DIAS_UTEIS_MAP: Record<string, number> = {
-  'Apelação Cível (15 dias úteis)': 15,
-  'Contestação (15 dias úteis)': 15,
-  'Recurso Especial (15 dias úteis)': 15,
-  'Embargo de Declaração (5 dias úteis)': 5,
-  'Agravo Interno (15 dias úteis)': 15,
-  'Mandado de Segurança (120 dias)': 120,
-};
+const TIPOS_PRAZO: PrazoConfig[] = [
+  { label: 'Apelação Cível (15 dias úteis)',        days: 15,  isCalendar: false },
+  { label: 'Contestação (15 dias úteis)',            days: 15,  isCalendar: false },
+  { label: 'Recurso Especial (15 dias úteis)',       days: 15,  isCalendar: false },
+  { label: 'Embargo de Declaração (5 dias úteis)',   days: 5,   isCalendar: false },
+  { label: 'Agravo Interno (15 dias úteis)',         days: 15,  isCalendar: false },
+  { label: 'Mandado de Segurança (120 dias corridos)', days: 120, isCalendar: true },
+];
 
 // ── Helpers ────────────────────────────────────────────────
 function getDaysInMonth(year: number, month: number) {
@@ -343,7 +336,8 @@ interface CalcModalProps {
 
 function CalcModal({ onClose, onAppointmentCreated }: CalcModalProps) {
   const [dataInt, setDataInt] = useState('');
-  const [tipoPrazo, setTipoPrazo] = useState(TIPOS_PRAZO[0]);
+  const [tipoPrazo, setTipoPrazo] = useState(TIPOS_PRAZO[0].label);
+  const [tribunal, setTribunal] = useState('');
   const [comarca, setComarca] = useState('');
   const [calculating, setCalculating] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -353,6 +347,7 @@ function CalcModal({ onClose, onAppointmentCreated }: CalcModalProps) {
     diasRestantes: number;
     dueDate: string;
     skippedHolidays: number;
+    isCalendar: boolean;
   } | null>(null);
 
   async function calcular() {
@@ -361,19 +356,32 @@ function CalcModal({ onClose, onAppointmentCreated }: CalcModalProps) {
     setCalcError('');
     setResultado(null);
     try {
-      const result = await calculateDeadline({
-        start_date: dataInt,
-        business_days: DIAS_UTEIS_MAP[tipoPrazo] ?? 15,
-        comarca: comarca.trim() || null,
-      });
-      const dueDate = new Date(result.due_date + 'T12:00:00');
+      const config = TIPOS_PRAZO.find(t => t.label === tipoPrazo)!;
+      let dueDateStr: string;
+      let skippedHolidays = 0;
+      if (config.isCalendar) {
+        const d = new Date(dataInt + 'T12:00:00');
+        d.setDate(d.getDate() + config.days);
+        dueDateStr = localYMD(d);
+      } else {
+        const result = await calculateDeadline({
+          start_date: dataInt,
+          business_days: config.days,
+          court: tribunal.trim() || null,
+          comarca: comarca.trim() || null,
+        });
+        dueDateStr = result.due_date;
+        skippedHolidays = result.skipped_days.filter(d => d.reason === 'HOLIDAY').length;
+      }
+      const dueDate = new Date(dueDateStr + 'T12:00:00');
       const hoje = new Date();
       const diff = Math.max(0, Math.ceil((dueDate.getTime() - hoje.getTime()) / 86400000));
       setResultado({
         dataLimite: dueDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase(),
         diasRestantes: diff,
-        dueDate: result.due_date,
-        skippedHolidays: result.skipped_days.filter(d => d.reason === 'HOLIDAY').length,
+        dueDate: dueDateStr,
+        skippedHolidays,
+        isCalendar: config.isCalendar,
       });
     } catch (e) {
       setCalcError(errMsg(e));
@@ -418,19 +426,28 @@ function CalcModal({ onClose, onAppointmentCreated }: CalcModalProps) {
           </div>
           <div className={styles.mField}>
             <label className={styles.mLabel}>TIPO DE PRAZO</label>
-            <select className={styles.mSelect} value={tipoPrazo} onChange={e => setTipoPrazo(e.target.value)}>
-              {TIPOS_PRAZO.map(t => <option key={t}>{t}</option>)}
+            <select className={styles.mSelect} value={tipoPrazo} onChange={e => { setTipoPrazo(e.target.value); setResultado(null); }}>
+              {TIPOS_PRAZO.map(t => <option key={t.label} value={t.label}>{t.label}</option>)}
             </select>
           </div>
           <div className={styles.mField}>
-            <label className={styles.mLabel}>COMARCA / TRIBUNAL (OPCIONAL)</label>
+            <label className={styles.mLabel}>TRIBUNAL (OPCIONAL)</label>
+            <input
+              className={styles.mInput}
+              value={tribunal}
+              onChange={e => setTribunal(e.target.value)}
+              placeholder="Ex: TJSP, TJDFT"
+            />
+          </div>
+          <div className={styles.mField}>
+            <label className={styles.mLabel}>COMARCA (OPCIONAL)</label>
             <input
               className={styles.mInput}
               value={comarca}
               onChange={e => setComarca(e.target.value)}
-              placeholder="Ex: TJSP — Capital"
+              placeholder="Ex: Capital, Brasília"
             />
-            <small className={styles.fieldHint}>Usado para considerar feriados forenses locais.</small>
+            <small className={styles.fieldHint}>Feriados forenses do tribunal e comarca serão considerados.</small>
           </div>
           <button
             className={styles.btnSave}
@@ -454,11 +471,14 @@ function CalcModal({ onClose, onAppointmentCreated }: CalcModalProps) {
                 <span className={styles.calcResultNum}>{String(resultado.diasRestantes).padStart(2, '0')}</span>
                 <span className={styles.calcResultDiasLabel}>DIAS</span>
               </div>
-              {resultado.skippedHolidays > 0 && (
-                <p className={styles.calcSkipNote}>
-                  {resultado.skippedHolidays} feriado{resultado.skippedHolidays > 1 ? 's' : ''} forense{resultado.skippedHolidays > 1 ? 's' : ''} considerado{resultado.skippedHolidays > 1 ? 's' : ''}.
-                </p>
-              )}
+              {resultado.isCalendar
+                ? <p className={styles.calcSkipNote}>Prazo em dias corridos — fins de semana e feriados não suspendem.</p>
+                : resultado.skippedHolidays > 0 && (
+                  <p className={styles.calcSkipNote}>
+                    {resultado.skippedHolidays} feriado{resultado.skippedHolidays > 1 ? 's' : ''} forense{resultado.skippedHolidays > 1 ? 's' : ''} considerado{resultado.skippedHolidays > 1 ? 's' : ''}.
+                  </p>
+                )
+              }
               {calcError && <p className={styles.calcError}>{calcError}</p>}
               <button className={styles.btnSalvarAgenda} onClick={() => void salvar()} disabled={saving}>
                 <CalendarDays size={15} /> {saving ? 'Salvando...' : 'Salvar na Agenda'}

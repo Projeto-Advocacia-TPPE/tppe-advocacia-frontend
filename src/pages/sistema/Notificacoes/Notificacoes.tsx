@@ -50,7 +50,7 @@ const GROUP_LABELS: Record<GroupKey, string> = {
 };
 
 function groupIsOn(prefs: NotificationPreferences, group: GroupKey): boolean {
-  return PREF_GROUPS[group].some(k => prefs[k]);
+  return PREF_GROUPS[group].every(k => prefs[k]);
 }
 
 const DEFAULT_PREFS: NotificationPreferences = {
