@@ -26,6 +26,10 @@ export interface AuditLog {
   created_at: string;
 }
 
+export async function listActiveUsers(): Promise<PaginatedResponse<ApiUser>> {
+  return apiRequest('/users?is_active=true&limit=100');
+}
+
 export function listUsers(params?: { role?: UserRole; is_active?: boolean; page?: number; limit?: number }) {
   const q = new URLSearchParams();
   if (params?.role) q.set('role', params.role);

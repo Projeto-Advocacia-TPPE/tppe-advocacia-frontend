@@ -63,6 +63,11 @@
 .emptyColumn { min-height: 170px; display: grid; place-items: center; align-content: center; gap: 10px; padding: 20px; border: 1px dashed #d6dae1; border-radius: 7px; color: var(--gray); text-align: center; }
 .emptyIcon { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 7px; }
 .emptyColumn p { font-size: .68rem; line-height: 1.5; }
+.cardWrapper { display: contents; }
+.dropInsert { height: 3px; border-radius: 2px; background: var(--crimson); margin: 2px 0; }
+.loadMoreButton { width: 100%; min-height: 36px; border: 1px dashed #c3c9d3; border-radius: 6px; background: transparent; color: var(--gray); font: inherit; font-size: .68rem; font-weight: 700; cursor: pointer; transition: background .15s, color .15s; }
+.loadMoreButton:hover:not(:disabled) { background: #edf0f4; color: var(--navy); }
+.loadMoreButton:disabled { opacity: .5; cursor: wait; }
 .loadingCard { height: 180px; border-radius: 7px; background: linear-gradient(90deg, #eceef1 25%, #f6f7f8 50%, #eceef1 75%); background-size: 200% 100%; animation: shimmer 1.2s infinite; }
 .taskForm { display: grid; gap: 20px; }
 .formGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; }

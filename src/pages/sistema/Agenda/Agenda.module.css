@@ -219,3 +219,15 @@
   .mRow3 { grid-template-columns: 1fr 1fr; }
   .calCell { min-height: 70px; }
 }
+
+/* ── Utility ── */
+.formError {
+  color: #c62828; font-size: .85rem;
+  background: #fff5f5; padding: 10px 14px;
+  border-radius: 6px; border-left: 3px solid #c62828;
+}
+.fieldHint { font-size: .75rem; color: var(--gray); }
+.pageError { color: #c62828; font-size: .9rem; margin-bottom: 16px; }
+.calLoading { padding: 60px; text-align: center; color: var(--gray); font-size: .9rem; }
+.calcSkipNote { font-size: .75rem; color: rgba(255,255,255,.5); margin-top: 8px; line-height: 1.4; }
+.calcError { font-size: .8rem; color: #fca5a5; margin-top: 8px; line-height: 1.4; }
