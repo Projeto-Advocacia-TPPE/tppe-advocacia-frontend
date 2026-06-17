@@ -1,0 +1,503 @@
+import { useState, useEffect, useCallback } from 'react';
+import { Plus, Eye, Pencil, UserX, UserCheck, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
+import Modal from '../../../components/sistema/Modal/Modal';
+import { listUsers, createUser, updateUser, listAuditLogs } from '../../../services/users';
+import type { ApiUser, AuditLog, UserRole } from '../../../services/users';
+import { ApiError } from '../../../services/api';
+import styles from './Usuarios.module.css';
+
+type View = 'lista' | 'registros';
+type ModalType = 'novo' | 'ver' | 'editar' | 'desativar' | null;
+
+const ROLE_LABEL: Record<UserRole, string> = { ADMIN: 'Administrador', USER: 'Usuário' };
+
+const ACTION_LABEL: Record<AuditLog['action'], string> = {
+  USER_CREATED: 'Criação de Usuário',
+  USER_DEACTIVATED: 'Desativação de Usuário',
+  CLIENT_ANONYMIZED: 'Anonimização de Cliente',
+};
+
+const ACTION_COLOR: Record<AuditLog['action'], string> = {
+  USER_CREATED: '#4caf50',
+  USER_DEACTIVATED: '#ef5350',
+  CLIENT_ANONYMIZED: '#ff9800',
+};
+
+const LIMIT = 20;
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+export default function Usuarios() {
+  const [view, setView] = useState<View>('lista');
+
+  const [usuarios, setUsuarios] = useState<ApiUser[]>([]);
+  const [totalUsuarios, setTotalUsuarios] = useState(0);
+  const [pageUsuarios, setPageUsuarios] = useState(1);
+  const [loadingUsuarios, setLoadingUsuarios] = useState(false);
+  const [errorUsuarios, setErrorUsuarios] = useState('');
+
+  const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [totalLogs, setTotalLogs] = useState(0);
+  const [pageLogs, setPageLogs] = useState(1);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+  const [errorLogs, setErrorLogs] = useState('');
+
+  const [modalType, setModalType] = useState<ModalType>(null);
+  const [selectedUser, setSelectedUser] = useState<ApiUser | null>(null);
+  const [formNome, setFormNome] = useState('');
+  const [formEmail, setFormEmail] = useState('');
+  const [formRole, setFormRole] = useState<UserRole>('USER');
+  const [formIsActive, setFormIsActive] = useState(true);
+  const [formError, setFormError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const fetchUsuarios = useCallback(async (page: number) => {
+    setLoadingUsuarios(true);
+    setErrorUsuarios('');
+    try {
+      const res = await listUsers({ page, limit: LIMIT });
+      setUsuarios(res.data);
+      setTotalUsuarios(res.meta.total);
+    } catch {
+      setErrorUsuarios('Não foi possível carregar os usuários.');
+    } finally {
+      setLoadingUsuarios(false);
+    }
+  }, []);
+
+  const fetchLogs = useCallback(async (page: number) => {
+    setLoadingLogs(true);
+    setErrorLogs('');
+    try {
+      const res = await listAuditLogs({ page, limit: LIMIT });
+      setLogs(res.data);
+      setTotalLogs(res.meta.total);
+    } catch {
+      setErrorLogs('Não foi possível carregar os registros.');
+    } finally {
+      setLoadingLogs(false);
+    }
+  }, []);
+
+  useEffect(() => { void fetchUsuarios(pageUsuarios); }, [fetchUsuarios, pageUsuarios]);
+
+  useEffect(() => {
+    if (view === 'registros') void fetchLogs(pageLogs);
+  }, [fetchLogs, pageLogs, view]);
+
+  function openNovo() {
+    setFormNome(''); setFormEmail(''); setFormRole('USER'); setFormError('');
+    setModalType('novo');
+  }
+
+  function openVer(u: ApiUser) { setSelectedUser(u); setModalType('ver'); }
+
+  function openEditar(u: ApiUser) {
+    setSelectedUser(u);
+    setFormNome(u.name); setFormEmail(u.email);
+    setFormRole(u.role); setFormIsActive(u.is_active); setFormError('');
+    setModalType('editar');
+  }
+
+  function openDesativar(u: ApiUser) { setSelectedUser(u); setFormError(''); setModalType('desativar'); }
+
+  function closeModal() { setModalType(null); setSelectedUser(null); setFormError(''); }
+
+  async function salvarNovo() {
+    if (!formNome.trim() || !formEmail.trim()) {
+      setFormError('Nome e e-mail são obrigatórios.');
+      return;
+    }
+    setSubmitting(true);
+    setFormError('');
+    try {
+      const created = await createUser(formNome.trim(), formEmail.trim());
+      // POST /api/v1/users sempre cria como USER; promoção a ADMIN requer PATCH subsequente
+      const final = formRole === 'ADMIN'
+        ? (await updateUser(created.data.id, { role: 'ADMIN' })).data
+        : created.data;
+      setUsuarios(prev => [final, ...prev]);
+      setTotalUsuarios(prev => prev + 1);
+      closeModal();
+    } catch (err) {
+      setFormError(
+        err instanceof ApiError && err.code === 'EMAIL_ALREADY_EXISTS'
+          ? 'Este e-mail já está cadastrado.'
+          : 'Não foi possível criar o usuário.',
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function salvarEdicao() {
+    if (!selectedUser) return;
+    if (!formNome.trim() || !formEmail.trim()) {
+      setFormError('Nome e e-mail são obrigatórios.');
+      return;
+    }
+    setSubmitting(true);
+    setFormError('');
+    try {
+      const res = await updateUser(selectedUser.id, {
+        name: formNome.trim(),
+        email: formEmail.trim(),
+        role: formRole,
+        is_active: formIsActive,
+      });
+      setUsuarios(prev => prev.map(u => u.id === selectedUser.id ? res.data : u));
+      closeModal();
+    } catch (err) {
+      setFormError(
+        err instanceof ApiError && err.code === 'EMAIL_ALREADY_EXISTS'
+          ? 'Este e-mail já pertence a outro usuário.'
+          : 'Não foi possível atualizar o usuário.',
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function confirmarDesativar() {
+    if (!selectedUser) return;
+    setSubmitting(true);
+    setFormError('');
+    try {
+      const res = await updateUser(selectedUser.id, { is_active: false });
+      setUsuarios(prev => prev.map(u => u.id === selectedUser.id ? res.data : u));
+      closeModal();
+    } catch {
+      setFormError('Não foi possível desativar o usuário.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function ativarUsuario(u: ApiUser) {
+    try {
+      const res = await updateUser(u.id, { is_active: true });
+      setUsuarios(prev => prev.map(x => x.id === u.id ? res.data : x));
+    } catch {
+      // Usuário pode tentar via modal de edição
+    }
+  }
+
+  const totalPagesUsuarios = Math.max(1, Math.ceil(totalUsuarios / LIMIT));
+  const totalPagesLogs = Math.max(1, Math.ceil(totalLogs / LIMIT));
+
+  return (
+    <div className={styles.page}>
+
+      {/* ── LISTA ── */}
+      {view === 'lista' && (
+        <>
+          <div className={styles.pageHeader}>
+            <h1 className={styles.pageTitle}>Gerenciar Usuários</h1>
+            <div className={styles.headerActions}>
+              <button className={styles.btnSecondary} onClick={() => setView('registros')}>Registros</button>
+              <button className={styles.btnPrimary} onClick={openNovo}>
+                <Plus size={16} /> Novo Usuário
+              </button>
+            </div>
+          </div>
+
+          {loadingUsuarios && <p className={styles.statusMsg}>Carregando...</p>}
+          {errorUsuarios && <p className={styles.errorMsg}>{errorUsuarios}</p>}
+
+          {!loadingUsuarios && !errorUsuarios && (
+            <div className={styles.tableWrap}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Nome</th>
+                    <th>E-mail</th>
+                    <th>Papel</th>
+                    <th>Status</th>
+                    <th>Criado em</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {usuarios.length === 0 && (
+                    <tr><td colSpan={6}><p className={styles.statusMsg}>Nenhum usuário encontrado.</p></td></tr>
+                  )}
+                  {usuarios.map(u => (
+                    <tr key={u.id} style={{ opacity: u.is_active ? 1 : 0.6 }}>
+                      <td><div className={styles.userName}>{u.name}</div></td>
+                      <td className={styles.email}>{u.email}</td>
+                      <td>
+                        <span
+                          className={styles.cargoBadge}
+                          style={u.role === 'ADMIN'
+                            ? { background: '#fff3e0', color: '#e65100' }
+                            : { background: '#e8eaf6', color: '#3949ab' }}
+                        >
+                          {ROLE_LABEL[u.role]}
+                        </span>
+                      </td>
+                      <td>
+                        <span
+                          className={styles.cargoBadge}
+                          style={u.is_active
+                            ? { background: '#e8f5e9', color: '#2e7d32' }
+                            : { background: '#fce4ec', color: '#c62828' }}
+                        >
+                          {u.is_active ? 'Ativo' : 'Inativo'}
+                        </span>
+                      </td>
+                      <td><div className={styles.date}>{formatDate(u.created_at)}</div></td>
+                      <td>
+                        <div className={styles.acoes}>
+                          <button className={styles.iconBtn} onClick={() => openVer(u)} title="Visualizar"><Eye size={16} /></button>
+                          <button className={styles.iconBtn} onClick={() => openEditar(u)} title="Editar"><Pencil size={16} /></button>
+                          {u.is_active
+                            ? <button className={`${styles.iconBtn} ${styles.danger}`} onClick={() => openDesativar(u)} title="Desativar"><UserX size={16} /></button>
+                            : <button className={styles.iconBtn} onClick={() => void ativarUsuario(u)} title="Reativar"><UserCheck size={16} /></button>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <div className={styles.pagination}>
+            <span className={styles.pageInfo}>
+              Mostrando <strong>{usuarios.length}</strong> de <strong>{totalUsuarios}</strong> Usuários
+            </span>
+            <div className={styles.pageControls}>
+              <button className={styles.pageArrow} disabled={pageUsuarios <= 1} onClick={() => setPageUsuarios(p => p - 1)}>
+                <ChevronLeft size={16} />
+              </button>
+              {Array.from({ length: totalPagesUsuarios }, (_, i) => (
+                <button
+                  key={i + 1}
+                  className={`${styles.pageNum} ${pageUsuarios === i + 1 ? styles.pageActive : ''}`}
+                  onClick={() => setPageUsuarios(i + 1)}
+                >
+                  {i + 1}
+                </button>
+              ))}
+              <button className={styles.pageArrow} disabled={pageUsuarios >= totalPagesUsuarios} onClick={() => setPageUsuarios(p => p + 1)}>
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── REGISTROS ── */}
+      {view === 'registros' && (
+        <>
+          <div className={styles.pageHeader}>
+            <h1 className={styles.pageTitle}>Registros</h1>
+            <button className={styles.btnBack} onClick={() => setView('lista')}>
+              <ArrowLeft size={16} /> Voltar aos Usuários
+            </button>
+          </div>
+
+          {loadingLogs && <p className={styles.statusMsg}>Carregando...</p>}
+          {errorLogs && <p className={styles.errorMsg}>{errorLogs}</p>}
+
+          {!loadingLogs && !errorLogs && (
+            <div className={styles.logList}>
+              {logs.length === 0 && <p className={styles.statusMsg}>Nenhum registro encontrado.</p>}
+              {logs.map(log => {
+                const d = new Date(log.created_at);
+                const dia = d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+                const hora = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                const afetado = log.target_user_name ?? log.target_client_name ?? '—';
+                return (
+                  <div key={log.id} className={styles.logItem}>
+                    <div className={styles.logDate}>
+                      <span className={styles.logDay}>{dia}</span>
+                      <span className={styles.logHour}>{hora}</span>
+                    </div>
+                    <div className={styles.logDivider} />
+                    <div className={styles.logContent}>
+                      <div className={styles.logDesc}>{ACTION_LABEL[log.action]}</div>
+                      <div className={styles.logSub}>Afetado: {afetado}</div>
+                    </div>
+                    <span className={styles.logBadge} style={{ background: ACTION_COLOR[log.action] }}>
+                      {ACTION_LABEL[log.action]}
+                    </span>
+                    <div className={styles.logExecutor}>
+                      <span className={styles.logExecutorLabel}>Executor</span>
+                      <span className={styles.logExecutorName}>{log.performed_by_name}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <div className={styles.pagination}>
+            <span className={styles.pageInfo}>
+              Mostrando <strong>{logs.length}</strong> de <strong>{totalLogs}</strong> Logs
+            </span>
+            <div className={styles.pageControls}>
+              <button className={styles.pageArrow} disabled={pageLogs <= 1} onClick={() => setPageLogs(p => p - 1)}>
+                <ChevronLeft size={16} />
+              </button>
+              {Array.from({ length: totalPagesLogs }, (_, i) => (
+                <button
+                  key={i + 1}
+                  className={`${styles.pageNum} ${pageLogs === i + 1 ? styles.pageActive : ''}`}
+                  onClick={() => setPageLogs(i + 1)}
+                >
+                  {i + 1}
+                </button>
+              ))}
+              <button className={styles.pageArrow} disabled={pageLogs >= totalPagesLogs} onClick={() => setPageLogs(p => p + 1)}>
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── MODAL NOVO ── */}
+      {modalType === 'novo' && (
+        <Modal title="Novo Usuário" onClose={closeModal}>
+          <UserFormFields
+            nome={formNome} setNome={setFormNome}
+            email={formEmail} setEmail={setFormEmail}
+            role={formRole} setRole={setFormRole}
+          />
+          <div className={styles.infoBox}>
+            <p>O sistema gerará uma senha temporária registrada nos logs do servidor.</p>
+          </div>
+          {formError && <p className={styles.errorMsg}>{formError}</p>}
+          <div className={styles.modalFooter}>
+            <button className={styles.btnCancel} onClick={closeModal}>Cancelar</button>
+            <button className={styles.btnPrimary} onClick={() => void salvarNovo()} disabled={submitting}>
+              <Plus size={16} /> {submitting ? 'Salvando...' : 'Salvar'}
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── MODAL VER ── */}
+      {modalType === 'ver' && selectedUser && (
+        <Modal title="Visualizar Usuário" onClose={closeModal}>
+          <div className={styles.fieldGroup}>
+            <label className={styles.fieldLabel}>Nome</label>
+            <div className={styles.fieldReadonly}>{selectedUser.name}</div>
+          </div>
+          <div className={styles.fieldRow}>
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel}>E-mail</label>
+              <div className={styles.fieldReadonly}>{selectedUser.email}</div>
+            </div>
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel}>Papel</label>
+              <div className={styles.fieldReadonly}>{ROLE_LABEL[selectedUser.role]}</div>
+            </div>
+          </div>
+          <div className={styles.fieldRow}>
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel}>Status</label>
+              <div className={styles.fieldReadonly}>{selectedUser.is_active ? 'Ativo' : 'Inativo'}</div>
+            </div>
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel}>Criado em</label>
+              <div className={styles.fieldReadonly}>{formatDate(selectedUser.created_at)}</div>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── MODAL EDITAR ── */}
+      {modalType === 'editar' && selectedUser && (
+        <Modal title="Editar Usuário" onClose={closeModal}>
+          <UserFormFields
+            nome={formNome} setNome={setFormNome}
+            email={formEmail} setEmail={setFormEmail}
+            role={formRole} setRole={setFormRole}
+          />
+          <div className={styles.fieldGroup}>
+            <label className={styles.fieldLabel}>Status</label>
+            <select
+              className={styles.fieldInput}
+              value={formIsActive ? 'ativo' : 'inativo'}
+              onChange={e => setFormIsActive(e.target.value === 'ativo')}
+            >
+              <option value="ativo">Ativo</option>
+              <option value="inativo">Inativo</option>
+            </select>
+          </div>
+          {formError && <p className={styles.errorMsg}>{formError}</p>}
+          <div className={styles.modalFooter}>
+            <button className={styles.btnCancel} onClick={closeModal}>Cancelar</button>
+            <button className={styles.btnPrimary} onClick={() => void salvarEdicao()} disabled={submitting}>
+              {submitting ? 'Salvando...' : 'Salvar'}
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── MODAL DESATIVAR ── */}
+      {modalType === 'desativar' && selectedUser && (
+        <Modal title="Desativar Usuário" onClose={closeModal} width={420}>
+          <p className={styles.deleteText}>
+            Tem certeza que deseja desativar <strong>{selectedUser.name}</strong>?
+            O usuário perderá acesso ao sistema.
+          </p>
+          {formError && <p className={styles.errorMsg}>{formError}</p>}
+          <div className={styles.modalFooter}>
+            <button className={styles.btnCancel} onClick={closeModal}>Cancelar</button>
+            <button className={styles.btnDanger} onClick={() => void confirmarDesativar()} disabled={submitting}>
+              {submitting ? 'Desativando...' : 'Confirmar'}
+            </button>
+          </div>
+        </Modal>
+      )}
+
+    </div>
+  );
+}
+
+interface UserFormFieldsProps {
+  nome: string; setNome: (v: string) => void;
+  email: string; setEmail: (v: string) => void;
+  role: UserRole; setRole: (v: UserRole) => void;
+}
+
+function UserFormFields({ nome, setNome, email, setEmail, role, setRole }: UserFormFieldsProps) {
+  return (
+    <>
+      <div className={styles.fieldGroup}>
+        <label className={styles.fieldLabel}>Nome Completo</label>
+        <input
+          className={styles.fieldInput}
+          value={nome}
+          onChange={e => setNome(e.target.value)}
+          placeholder="Ex: Ana Lima"
+        />
+      </div>
+      <div className={styles.fieldRow}>
+        <div className={styles.fieldGroup}>
+          <label className={styles.fieldLabel}>E-mail</label>
+          <input
+            className={styles.fieldInput}
+            type="email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="exemplo@escritorio.com"
+          />
+        </div>
+        <div className={styles.fieldGroup}>
+          <label className={styles.fieldLabel}>Papel</label>
+          <select className={styles.fieldInput} value={role} onChange={e => setRole(e.target.value as UserRole)}>
+            <option value="USER">Usuário</option>
+            <option value="ADMIN">Administrador</option>
+          </select>
+        </div>
+      </div>
+    </>
+  );
+}

@@ -1,0 +1,206 @@
+/* ── Background ── */
+.bg {
+  min-height: 100vh;
+  background: #f0f4f8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 48px 20px 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Decorative diagonal shapes */
+.bg::before,
+.bg::after {
+  content: '';
+  position: fixed;
+  background: rgba(200,210,220,.35);
+  border-radius: 16px;
+  z-index: 0;
+}
+.bg::before {
+  width: 340px; height: 500px;
+  bottom: -60px; right: -80px;
+  transform: rotate(-25deg);
+}
+.bg::after {
+  width: 220px; height: 380px;
+  bottom: 80px; right: 180px;
+  transform: rotate(-25deg);
+}
+
+/* Logo */
+.logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 40px;
+  z-index: 1;
+}
+.logoImg { height: 64px; width: auto; }
+
+/* Card */
+.card {
+  background: var(--white);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.08);
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+.cardBar {
+  height: 5px;
+  background: var(--crimson);
+  width: 100%;
+}
+
+.cardBody { padding: 36px 40px 40px; }
+
+/* Title */
+.cardTitle {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--navy);
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.cardSubtitle {
+  font-size: .9rem;
+  color: var(--gray);
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+/* Input field with floating label */
+.fieldWrap {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.fieldLabel {
+  position: absolute;
+  top: -8px; left: 12px;
+  background: var(--white);
+  padding: 0 4px;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--gray);
+  z-index: 1;
+}
+.fieldLabelError { color: var(--crimson); }
+
+.fieldInner {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid #d0d0d0;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: border-color .2s;
+}
+.fieldInner:focus-within { border-color: var(--navy); }
+.fieldInnerError { border-color: var(--crimson) !important; }
+
+.fieldIcon {
+  padding: 0 12px;
+  color: #bbb;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.fieldInput {
+  flex: 1;
+  padding: 13px 12px 13px 0;
+  border: none;
+  outline: none;
+  font-family: var(--font-body);
+  font-size: .95rem;
+  color: var(--text);
+  background: transparent;
+}
+.fieldInput::placeholder { color: #bbb; }
+
+/* Row between fields */
+.forgotRow {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -12px;
+  margin-bottom: 20px;
+}
+
+.forgotLink {
+  font-size: .82rem;
+  color: var(--crimson);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: opacity .2s;
+}
+.forgotLink:hover { opacity: .7; }
+
+/* Submit button */
+.btnSubmit {
+  width: 100%;
+  background: var(--navy);
+  color: var(--white);
+  border: none;
+  padding: 14px;
+  border-radius: 8px;
+  font-size: .88rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: background .2s;
+  margin-bottom: 16px;
+}
+.btnSubmit:hover { background: var(--navy-mid); }
+.btnSubmit:disabled {
+  cursor: not-allowed;
+  opacity: .6;
+}
+
+/* Error message */
+.errorMsg {
+  color: var(--crimson);
+  font-size: .82rem;
+  text-align: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--crimson);
+  margin-bottom: 4px;
+}
+
+/* Success message */
+.successMsg {
+  color: var(--navy);
+  font-size: .95rem;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+/* Back to login */
+.backLink {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--gray);
+  font-size: .85rem;
+  cursor: pointer;
+  font-family: var(--font-body);
+  margin-top: 8px;
+  transition: color .2s;
+}
+.backLink:hover { color: var(--navy); }
