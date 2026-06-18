@@ -13,12 +13,14 @@ const ROLE_LABEL: Record<UserRole, string> = { ADMIN: 'Administrador', USER: 'Us
 
 const ACTION_LABEL: Record<AuditLog['action'], string> = {
   USER_CREATED: 'Criação de Usuário',
+  USER_UPDATED: 'Edição de Usuário',
   USER_DEACTIVATED: 'Desativação de Usuário',
   CLIENT_ANONYMIZED: 'Anonimização de Cliente',
 };
 
 const ACTION_COLOR: Record<AuditLog['action'], string> = {
   USER_CREATED: '#4caf50',
+  USER_UPDATED: '#1976d2',
   USER_DEACTIVATED: '#ef5350',
   CLIENT_ANONYMIZED: '#ff9800',
 };

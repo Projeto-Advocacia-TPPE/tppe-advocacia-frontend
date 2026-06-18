@@ -14,7 +14,7 @@ export interface ApiUser {
 
 export interface AuditLog {
   id: number;
-  action: 'USER_CREATED' | 'USER_DEACTIVATED' | 'CLIENT_ANONYMIZED';
+  action: 'USER_CREATED' | 'USER_UPDATED' | 'USER_DEACTIVATED' | 'CLIENT_ANONYMIZED';
   performed_by_id: number;
   performed_by_name: string;
   target_user_id: number | null;
