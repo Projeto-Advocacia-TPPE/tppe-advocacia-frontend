@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Eye, Pencil, UserX, UserCheck, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Eye, Pencil, UserX, UserCheck, ArrowLeft, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import Modal from '../../../components/sistema/Modal/Modal';
 import { listUsers, createUser, updateUser, listAuditLogs } from '../../../services/users';
 import type { ApiUser, AuditLog, UserRole } from '../../../services/users';
@@ -45,6 +45,9 @@ export default function Usuarios() {
   const [pageLogs, setPageLogs] = useState(1);
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [errorLogs, setErrorLogs] = useState('');
+  const [filterAction, setFilterAction] = useState<AuditLog['action'] | ''>('');
+  const [filterDateFrom, setFilterDateFrom] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
 
   const [modalType, setModalType] = useState<ModalType>(null);
   const [selectedUser, setSelectedUser] = useState<ApiUser | null>(null);
@@ -69,11 +72,22 @@ export default function Usuarios() {
     }
   }, []);
 
-  const fetchLogs = useCallback(async (page: number) => {
+  const fetchLogs = useCallback(async (
+    page: number,
+    action?: AuditLog['action'],
+    dateFrom?: string,
+    dateTo?: string,
+  ) => {
     setLoadingLogs(true);
     setErrorLogs('');
     try {
-      const res = await listAuditLogs({ page, limit: LIMIT });
+      const res = await listAuditLogs({
+        page,
+        limit: LIMIT,
+        action: action || undefined,
+        date_from: dateFrom ? `${dateFrom}T00:00:00` : undefined,
+        date_to: dateTo ? `${dateTo}T23:59:59` : undefined,
+      });
       setLogs(res.data);
       setTotalLogs(res.meta.total);
     } catch {
@@ -86,8 +100,13 @@ export default function Usuarios() {
   useEffect(() => { void fetchUsuarios(pageUsuarios); }, [fetchUsuarios, pageUsuarios]);
 
   useEffect(() => {
-    if (view === 'registros') void fetchLogs(pageLogs);
-  }, [fetchLogs, pageLogs, view]);
+    if (view === 'registros') void fetchLogs(
+      pageLogs,
+      filterAction || undefined,
+      filterDateFrom || undefined,
+      filterDateTo || undefined,
+    );
+  }, [fetchLogs, pageLogs, view, filterAction, filterDateFrom, filterDateTo]);
 
   function openNovo() {
     setFormNome(''); setFormEmail(''); setFormRole('USER'); setFormError('');
@@ -300,6 +319,49 @@ export default function Usuarios() {
             <button className={styles.btnBack} onClick={() => setView('lista')}>
               <ArrowLeft size={16} /> Voltar aos Usuários
             </button>
+          </div>
+
+          <div className={styles.filterBar}>
+            <select
+              className={styles.filterInput}
+              value={filterAction}
+              onChange={e => { setFilterAction(e.target.value as AuditLog['action'] | ''); setPageLogs(1); }}
+            >
+              <option value="">Todas as ações</option>
+              <option value="USER_CREATED">Criação de Usuário</option>
+              <option value="USER_UPDATED">Edição de Usuário</option>
+              <option value="USER_DEACTIVATED">Desativação de Usuário</option>
+              <option value="CLIENT_ANONYMIZED">Anonimização de Cliente</option>
+            </select>
+
+            <div className={styles.filterDateGroup}>
+              <span className={styles.filterLabel}>De</span>
+              <input
+                type="date"
+                className={styles.filterInput}
+                value={filterDateFrom}
+                onChange={e => { setFilterDateFrom(e.target.value); setPageLogs(1); }}
+              />
+            </div>
+
+            <div className={styles.filterDateGroup}>
+              <span className={styles.filterLabel}>Até</span>
+              <input
+                type="date"
+                className={styles.filterInput}
+                value={filterDateTo}
+                onChange={e => { setFilterDateTo(e.target.value); setPageLogs(1); }}
+              />
+            </div>
+
+            {(filterAction || filterDateFrom || filterDateTo) && (
+              <button
+                className={styles.btnBack}
+                onClick={() => { setFilterAction(''); setFilterDateFrom(''); setFilterDateTo(''); setPageLogs(1); }}
+              >
+                <X size={14} /> Limpar
+              </button>
+            )}
           </div>
 
           {loadingLogs && <p className={styles.statusMsg}>Carregando...</p>}
