@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Lock } from 'lucide-react';
+import { Lock, Eye, EyeOff } from 'lucide-react';
 import { ApiError } from '../../services/api';
 import { confirmPasswordReset } from '../../services/auth';
 import styles from './Auth.module.css';
@@ -11,12 +11,16 @@ function InputField({
   onChange,
   error = false,
   placeholder,
+  show = false,
+  onToggle,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   error?: boolean;
   placeholder?: string;
+  show?: boolean;
+  onToggle?: () => void;
 }) {
   return (
     <div className={styles.fieldWrap}>
@@ -25,11 +29,14 @@ function InputField({
         <span className={styles.fieldIcon}><Lock size={16} /></span>
         <input
           className={styles.fieldInput}
-          type="password"
+          type={show ? 'text' : 'password'}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
         />
+        <button type="button" className={styles.eyeBtn} onClick={onToggle} tabIndex={-1}>
+          {show ? <EyeOff size={16} /> : <Eye size={16} />}
+        </button>
       </div>
     </div>
   );
@@ -42,6 +49,8 @@ export default function ResetPassword() {
 
   const [novaSenha, setNovaSenha] = useState('');
   const [confirma, setConfirma] = useState('');
+  const [showNova, setShowNova] = useState(false);
+  const [showConfirma, setShowConfirma] = useState(false);
   const [erro, setErro] = useState('');
   const [loading, setLoading] = useState(false);
   const [sucesso, setSucesso] = useState(false);
@@ -135,6 +144,8 @@ export default function ResetPassword() {
                 onChange={(v) => { setNovaSenha(v); setErro(''); }}
                 error={Boolean(erro)}
                 placeholder="Mínimo 8 caracteres"
+                show={showNova}
+                onToggle={() => setShowNova(s => !s)}
               />
 
               <InputField
@@ -143,6 +154,8 @@ export default function ResetPassword() {
                 onChange={(v) => { setConfirma(v); setErro(''); }}
                 error={Boolean(erro)}
                 placeholder="Repita a senha"
+                show={showConfirma}
+                onToggle={() => setShowConfirma(s => !s)}
               />
 
               <button

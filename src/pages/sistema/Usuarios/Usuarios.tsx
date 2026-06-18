@@ -7,7 +7,7 @@ import { ApiError } from '../../../services/api';
 import styles from './Usuarios.module.css';
 
 type View = 'lista' | 'registros';
-type ModalType = 'novo' | 'ver' | 'editar' | 'desativar' | null;
+type ModalType = 'novo' | 'ver' | 'editar' | 'desativar' | 'reativar' | null;
 
 const ROLE_LABEL: Record<UserRole, string> = { ADMIN: 'Administrador', USER: 'Usuário' };
 
@@ -123,6 +123,7 @@ export default function Usuarios() {
   }
 
   function openDesativar(u: ApiUser) { setSelectedUser(u); setFormError(''); setModalType('desativar'); }
+  function openReativar(u: ApiUser) { setSelectedUser(u); setFormError(''); setModalType('reativar'); }
 
   function closeModal() { setModalType(null); setSelectedUser(null); setFormError(''); }
 
@@ -196,12 +197,18 @@ export default function Usuarios() {
     }
   }
 
-  async function ativarUsuario(u: ApiUser) {
+  async function confirmarReativar() {
+    if (!selectedUser) return;
+    setSubmitting(true);
+    setFormError('');
     try {
-      const res = await updateUser(u.id, { is_active: true });
-      setUsuarios(prev => prev.map(x => x.id === u.id ? res.data : x));
+      const res = await updateUser(selectedUser.id, { is_active: true });
+      setUsuarios(prev => prev.map(u => u.id === selectedUser.id ? res.data : u));
+      closeModal();
     } catch {
-      // Usuário pode tentar via modal de edição
+      setFormError('Não foi possível reativar o usuário.');
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -275,7 +282,7 @@ export default function Usuarios() {
                           <button className={styles.iconBtn} onClick={() => openEditar(u)} title="Editar"><Pencil size={16} /></button>
                           {u.is_active
                             ? <button className={`${styles.iconBtn} ${styles.danger}`} onClick={() => openDesativar(u)} title="Desativar"><UserX size={16} /></button>
-                            : <button className={styles.iconBtn} onClick={() => void ativarUsuario(u)} title="Reativar"><UserCheck size={16} /></button>
+                            : <button className={styles.iconBtn} onClick={() => openReativar(u)} title="Reativar"><UserCheck size={16} /></button>
                           }
                         </div>
                       </td>
@@ -516,6 +523,23 @@ export default function Usuarios() {
             <button className={styles.btnCancel} onClick={closeModal}>Cancelar</button>
             <button className={styles.btnDanger} onClick={() => void confirmarDesativar()} disabled={submitting}>
               {submitting ? 'Desativando...' : 'Confirmar'}
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── MODAL REATIVAR ── */}
+      {modalType === 'reativar' && selectedUser && (
+        <Modal title="Reativar Usuário" onClose={closeModal} width={420}>
+          <p className={styles.deleteText}>
+            Tem certeza que deseja reativar <strong>{selectedUser.name}</strong>?
+            O usuário voltará a ter acesso ao sistema.
+          </p>
+          {formError && <p className={styles.errorMsg}>{formError}</p>}
+          <div className={styles.modalFooter}>
+            <button className={styles.btnCancel} onClick={closeModal}>Cancelar</button>
+            <button className={styles.btnPrimary} onClick={() => void confirmarReativar()} disabled={submitting}>
+              {submitting ? 'Reativando...' : 'Confirmar'}
             </button>
           </div>
         </Modal>
