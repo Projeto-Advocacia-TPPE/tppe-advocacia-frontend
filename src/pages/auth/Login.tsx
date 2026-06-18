@@ -120,6 +120,7 @@ export default function Login() {
                   type="button"
                   className={styles.forgotLink}
                   onClick={() => {
+                    setEmailRec(email);
                     setTela('esqueci');
                     setErroLogin('');
                   }}
