@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Eye, Pencil, UserX, UserCheck, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Eye, Pencil, UserX, UserCheck, ArrowLeft, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import Modal from '../../../components/sistema/Modal/Modal';
 import { listUsers, createUser, updateUser, listAuditLogs } from '../../../services/users';
 import type { ApiUser, AuditLog, UserRole } from '../../../services/users';
@@ -7,18 +7,20 @@ import { ApiError } from '../../../services/api';
 import styles from './Usuarios.module.css';
 
 type View = 'lista' | 'registros';
-type ModalType = 'novo' | 'ver' | 'editar' | 'desativar' | null;
+type ModalType = 'novo' | 'ver' | 'editar' | 'desativar' | 'reativar' | null;
 
 const ROLE_LABEL: Record<UserRole, string> = { ADMIN: 'Administrador', USER: 'Usuário' };
 
 const ACTION_LABEL: Record<AuditLog['action'], string> = {
   USER_CREATED: 'Criação de Usuário',
+  USER_UPDATED: 'Edição de Usuário',
   USER_DEACTIVATED: 'Desativação de Usuário',
   CLIENT_ANONYMIZED: 'Anonimização de Cliente',
 };
 
 const ACTION_COLOR: Record<AuditLog['action'], string> = {
   USER_CREATED: '#4caf50',
+  USER_UPDATED: '#1976d2',
   USER_DEACTIVATED: '#ef5350',
   CLIENT_ANONYMIZED: '#ff9800',
 };
@@ -43,6 +45,9 @@ export default function Usuarios() {
   const [pageLogs, setPageLogs] = useState(1);
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [errorLogs, setErrorLogs] = useState('');
+  const [filterAction, setFilterAction] = useState<AuditLog['action'] | ''>('');
+  const [filterDateFrom, setFilterDateFrom] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
 
   const [modalType, setModalType] = useState<ModalType>(null);
   const [selectedUser, setSelectedUser] = useState<ApiUser | null>(null);
@@ -67,11 +72,22 @@ export default function Usuarios() {
     }
   }, []);
 
-  const fetchLogs = useCallback(async (page: number) => {
+  const fetchLogs = useCallback(async (
+    page: number,
+    action?: AuditLog['action'],
+    dateFrom?: string,
+    dateTo?: string,
+  ) => {
     setLoadingLogs(true);
     setErrorLogs('');
     try {
-      const res = await listAuditLogs({ page, limit: LIMIT });
+      const res = await listAuditLogs({
+        page,
+        limit: LIMIT,
+        action: action || undefined,
+        date_from: dateFrom ? `${dateFrom}T00:00:00` : undefined,
+        date_to: dateTo ? `${dateTo}T23:59:59` : undefined,
+      });
       setLogs(res.data);
       setTotalLogs(res.meta.total);
     } catch {
@@ -84,8 +100,13 @@ export default function Usuarios() {
   useEffect(() => { void fetchUsuarios(pageUsuarios); }, [fetchUsuarios, pageUsuarios]);
 
   useEffect(() => {
-    if (view === 'registros') void fetchLogs(pageLogs);
-  }, [fetchLogs, pageLogs, view]);
+    if (view === 'registros') void fetchLogs(
+      pageLogs,
+      filterAction || undefined,
+      filterDateFrom || undefined,
+      filterDateTo || undefined,
+    );
+  }, [fetchLogs, pageLogs, view, filterAction, filterDateFrom, filterDateTo]);
 
   function openNovo() {
     setFormNome(''); setFormEmail(''); setFormRole('USER'); setFormError('');
@@ -102,6 +123,7 @@ export default function Usuarios() {
   }
 
   function openDesativar(u: ApiUser) { setSelectedUser(u); setFormError(''); setModalType('desativar'); }
+  function openReativar(u: ApiUser) { setSelectedUser(u); setFormError(''); setModalType('reativar'); }
 
   function closeModal() { setModalType(null); setSelectedUser(null); setFormError(''); }
 
@@ -175,12 +197,18 @@ export default function Usuarios() {
     }
   }
 
-  async function ativarUsuario(u: ApiUser) {
+  async function confirmarReativar() {
+    if (!selectedUser) return;
+    setSubmitting(true);
+    setFormError('');
     try {
-      const res = await updateUser(u.id, { is_active: true });
-      setUsuarios(prev => prev.map(x => x.id === u.id ? res.data : x));
+      const res = await updateUser(selectedUser.id, { is_active: true });
+      setUsuarios(prev => prev.map(u => u.id === selectedUser.id ? res.data : u));
+      closeModal();
     } catch {
-      // Usuário pode tentar via modal de edição
+      setFormError('Não foi possível reativar o usuário.');
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -254,7 +282,7 @@ export default function Usuarios() {
                           <button className={styles.iconBtn} onClick={() => openEditar(u)} title="Editar"><Pencil size={16} /></button>
                           {u.is_active
                             ? <button className={`${styles.iconBtn} ${styles.danger}`} onClick={() => openDesativar(u)} title="Desativar"><UserX size={16} /></button>
-                            : <button className={styles.iconBtn} onClick={() => void ativarUsuario(u)} title="Reativar"><UserCheck size={16} /></button>
+                            : <button className={styles.iconBtn} onClick={() => openReativar(u)} title="Reativar"><UserCheck size={16} /></button>
                           }
                         </div>
                       </td>
@@ -298,6 +326,49 @@ export default function Usuarios() {
             <button className={styles.btnBack} onClick={() => setView('lista')}>
               <ArrowLeft size={16} /> Voltar aos Usuários
             </button>
+          </div>
+
+          <div className={styles.filterBar}>
+            <select
+              className={styles.filterInput}
+              value={filterAction}
+              onChange={e => { setFilterAction(e.target.value as AuditLog['action'] | ''); setPageLogs(1); }}
+            >
+              <option value="">Todas as ações</option>
+              <option value="USER_CREATED">Criação de Usuário</option>
+              <option value="USER_UPDATED">Edição de Usuário</option>
+              <option value="USER_DEACTIVATED">Desativação de Usuário</option>
+              <option value="CLIENT_ANONYMIZED">Anonimização de Cliente</option>
+            </select>
+
+            <div className={styles.filterDateGroup}>
+              <span className={styles.filterLabel}>De</span>
+              <input
+                type="date"
+                className={styles.filterInput}
+                value={filterDateFrom}
+                onChange={e => { setFilterDateFrom(e.target.value); setPageLogs(1); }}
+              />
+            </div>
+
+            <div className={styles.filterDateGroup}>
+              <span className={styles.filterLabel}>Até</span>
+              <input
+                type="date"
+                className={styles.filterInput}
+                value={filterDateTo}
+                onChange={e => { setFilterDateTo(e.target.value); setPageLogs(1); }}
+              />
+            </div>
+
+            {(filterAction || filterDateFrom || filterDateTo) && (
+              <button
+                className={styles.btnBack}
+                onClick={() => { setFilterAction(''); setFilterDateFrom(''); setFilterDateTo(''); setPageLogs(1); }}
+              >
+                <X size={14} /> Limpar
+              </button>
+            )}
           </div>
 
           {loadingLogs && <p className={styles.statusMsg}>Carregando...</p>}
@@ -452,6 +523,23 @@ export default function Usuarios() {
             <button className={styles.btnCancel} onClick={closeModal}>Cancelar</button>
             <button className={styles.btnDanger} onClick={() => void confirmarDesativar()} disabled={submitting}>
               {submitting ? 'Desativando...' : 'Confirmar'}
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── MODAL REATIVAR ── */}
+      {modalType === 'reativar' && selectedUser && (
+        <Modal title="Reativar Usuário" onClose={closeModal} width={420}>
+          <p className={styles.deleteText}>
+            Tem certeza que deseja reativar <strong>{selectedUser.name}</strong>?
+            O usuário voltará a ter acesso ao sistema.
+          </p>
+          {formError && <p className={styles.errorMsg}>{formError}</p>}
+          <div className={styles.modalFooter}>
+            <button className={styles.btnCancel} onClick={closeModal}>Cancelar</button>
+            <button className={styles.btnPrimary} onClick={() => void confirmarReativar()} disabled={submitting}>
+              {submitting ? 'Reativando...' : 'Confirmar'}
             </button>
           </div>
         </Modal>

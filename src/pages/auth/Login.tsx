@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Mail, Lock, ArrowLeft } from 'lucide-react';
+import { Mail, Lock, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { ApiError } from '../../services/api';
 import { login, requestPasswordReset } from '../../services/auth';
 import styles from './Auth.module.css';
@@ -15,6 +15,9 @@ function InputField({
   icon,
   error = false,
   placeholder,
+  showToggle = false,
+  show = false,
+  onToggle,
 }: {
   label: string;
   type?: string;
@@ -23,6 +26,9 @@ function InputField({
   icon: React.ReactNode;
   error?: boolean;
   placeholder?: string;
+  showToggle?: boolean;
+  show?: boolean;
+  onToggle?: () => void;
 }) {
   return (
     <div className={styles.fieldWrap}>
@@ -31,13 +37,16 @@ function InputField({
         <span className={styles.fieldIcon}>{icon}</span>
         <input
           className={styles.fieldInput}
-          type={type}
+          type={showToggle ? (show ? 'text' : 'password') : type}
           value={value}
-          onChange={(e) => {
-            onChange(e.target.value);
-          }}
+          onChange={(e) => { onChange(e.target.value); }}
           placeholder={placeholder}
         />
+        {showToggle && (
+          <button type="button" className={styles.eyeBtn} onClick={onToggle} tabIndex={-1}>
+            {show ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -51,6 +60,7 @@ export default function Login() {
 
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [showSenha, setShowSenha] = useState(false);
   const [erroLogin, setErroLogin] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -115,11 +125,24 @@ export default function Login() {
                 placeholder="seu@email.com"
               />
 
+              <InputField
+                label="SENHA"
+                value={senha}
+                onChange={(v) => { setSenha(v); setErroLogin(''); }}
+                icon={<Lock size={16} />}
+                error={Boolean(erroLogin)}
+                placeholder="••••••••••••"
+                showToggle
+                show={showSenha}
+                onToggle={() => setShowSenha(s => !s)}
+              />
+
               <div className={styles.forgotRow}>
                 <button
                   type="button"
                   className={styles.forgotLink}
                   onClick={() => {
+                    setEmailRec(email);
                     setTela('esqueci');
                     setErroLogin('');
                   }}
@@ -127,19 +150,6 @@ export default function Login() {
                   Esqueci minha Senha
                 </button>
               </div>
-
-              <InputField
-                label="SENHA"
-                type="password"
-                value={senha}
-                onChange={(v) => {
-                  setSenha(v);
-                  setErroLogin('');
-                }}
-                icon={<Lock size={16} />}
-                error={Boolean(erroLogin)}
-                placeholder="••••••••••••"
-              />
 
               <button
                 type="submit"
