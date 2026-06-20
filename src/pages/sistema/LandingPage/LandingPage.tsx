@@ -55,8 +55,8 @@ function ImageUpload({ value, onChange, hint, size }: ImageUploadProps) {
     try {
       const url = await uploadMedia(file);
       onChange(url);
-    } catch {
-      setError('Falha no upload. Tente novamente.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha no upload. Tente novamente.');
     } finally {
       setUploading(false);
     }

@@ -1,4 +1,4 @@
-import { apiRequest } from './api';
+import { apiRequest, getAccessToken, clearAccessToken, ApiError } from './api';
 import type { SuccessResponse } from './api';
 import type { LandingPageData } from '../pages/sistema/LandingPage/types';
 
@@ -101,8 +101,14 @@ export async function updateOfficeConfig(ui: LandingPageData): Promise<LandingPa
   return apiToUI(res.data);
 }
 
+const UPLOAD_ERROR_MESSAGES: Record<string, string> = {
+  FILE_TOO_LARGE:    'Arquivo muito grande. O limite é 5 MB.',
+  INVALID_MIME_TYPE: 'Tipo de arquivo não permitido. Envie uma imagem.',
+  VALIDATION_ERROR:  'Arquivo inválido.',
+  UNAUTHORIZED:      'Sessão expirada. Faça login novamente.',
+};
+
 export async function uploadMedia(file: File): Promise<string> {
-  const { getAccessToken } = await import('./api');
   const token = getAccessToken();
   const form = new FormData();
   form.append('file', file);
@@ -113,7 +119,22 @@ export async function uploadMedia(file: File): Promise<string> {
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
   });
 
-  if (!res.ok) throw new Error('Upload falhou');
+  if (res.status === 401) {
+    clearAccessToken();
+    if (window.location.pathname !== '/login') window.location.assign('/login');
+    throw new ApiError('Não autorizado', 401, 'UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({})) as { error?: { code?: string } };
+    const code = body?.error?.code ?? '';
+    throw new ApiError(
+      UPLOAD_ERROR_MESSAGES[code] ?? 'Falha no upload. Tente novamente.',
+      res.status,
+      code,
+    );
+  }
+
   const body = (await res.json()) as SuccessResponse<{ url: string }>;
   return body.data.url;
 }
