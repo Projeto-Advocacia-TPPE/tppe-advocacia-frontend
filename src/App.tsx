@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 
 function ScrollToHash() {
@@ -48,7 +48,6 @@ import Clientes from './pages/sistema/Clientes';
 import Agenda from './pages/sistema/Agenda/Agenda';
 import Processos from './pages/sistema/Processos/Processos';
 import Tarefas from './pages/sistema/Tarefas';
-import Dashboard from './pages/sistema/Dashboard/Dashboard';
 import Artigos_ from './pages/sistema/Artigos_/Artigos';
 import LogsAPI from './pages/sistema/LogsAPI/LogsAPI';
 
@@ -86,7 +85,7 @@ export default function App() {
         {/* Sistema */}
         <Route element={<ProtectedRoute />}>
           <Route path="/sistema" element={<SistemaLayout />}>
-            <Route index element={<Dashboard />} />
+            <Route index element={<Navigate to="leads" replace />} />
             <Route element={<AdminRoute />}>
               <Route path="usuarios" element={<Usuarios />} />
             </Route>
