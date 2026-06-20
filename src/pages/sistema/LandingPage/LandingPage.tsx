@@ -182,16 +182,18 @@ export default function LandingPageConfig() {
       {/* ── Dados Institucionais ── */}
       <SectionCard icon={<Building2 size={20} />} title="Dados Institucionais">
         <div className={styles.row2}>
-          <Field label="E-MAIL DE CONTATO">
-            <input className={styles.input} value={data.email} onChange={e => set('email', e.target.value)} />
-          </Field>
+          <div>
+            <Field label="E-MAIL DE CONTATO">
+              <input className={styles.input} value={data.email} onChange={e => set('email', e.target.value)} />
+            </Field>
+            <Field label="TELEFONE">
+              <input className={styles.input} value={data.telefone} onChange={e => set('telefone', e.target.value)} />
+            </Field>
+          </div>
           <Field label="ENDEREÇO">
-            <textarea className={styles.textarea} rows={3} value={data.endereco} onChange={e => set('endereco', e.target.value)} />
+            <textarea className={styles.textarea} rows={5} value={data.endereco} onChange={e => set('endereco', e.target.value)} />
           </Field>
         </div>
-        <Field label="TELEFONE">
-          <input className={styles.input} style={{ maxWidth: 260 }} value={data.telefone} onChange={e => set('telefone', e.target.value)} />
-        </Field>
       </SectionCard>
 
       {/* ── Links ── */}
@@ -206,19 +208,23 @@ export default function LandingPageConfig() {
 
       {/* ── Hero ── */}
       <SectionCard icon={<Star size={20} />} title="Hero (Destaque Principal)">
-        <Field label="TÍTULO DO IMPACTO">
-          <input className={styles.input} value={data.heroTitulo} onChange={e => set('heroTitulo', e.target.value)} />
-        </Field>
-        <Field label="SUBTEXTO DE APOIO">
-          <textarea className={styles.textarea} rows={3} value={data.heroSubtexto} onChange={e => set('heroSubtexto', e.target.value)} />
-        </Field>
-        <Field label="IMAGEM (HERO)">
-          <ImageUpload
-            value={data.heroImagem} onChange={v => set('heroImagem', v)}
-            hint="Adicione uma imagem profissional que será principal da Landing Page."
-            size="420px por 600px"
-          />
-        </Field>
+        <div className={styles.row2}>
+          <div>
+            <Field label="TÍTULO DO IMPACTO">
+              <input className={styles.input} value={data.heroTitulo} onChange={e => set('heroTitulo', e.target.value)} />
+            </Field>
+            <Field label="SUBTEXTO DE APOIO">
+              <textarea className={styles.textarea} rows={3} value={data.heroSubtexto} onChange={e => set('heroSubtexto', e.target.value)} />
+            </Field>
+          </div>
+          <Field label="IMAGEM (HERO)">
+            <ImageUpload
+              value={data.heroImagem} onChange={v => set('heroImagem', v)}
+              hint="Adicione uma imagem profissional que será principal da Landing Page."
+              size="420px por 600px"
+            />
+          </Field>
+        </div>
       </SectionCard>
 
       {/* ── Sobre Escritório ── */}
@@ -232,11 +238,13 @@ export default function LandingPageConfig() {
               <textarea className={styles.textarea} rows={5} value={data.escritorioConteudo} onChange={e => set('escritorioConteudo', e.target.value)} />
             </Field>
           </div>
-          <ImageUpload
-            value={data.escritorioImagem} onChange={v => set('escritorioImagem', v)}
-            hint="Adicione uma imagem profissional que ficará no sobre da Landing Page."
-            size="500px por 575px"
-          />
+          <Field label="IMAGEM DO ESCRITÓRIO">
+            <ImageUpload
+              value={data.escritorioImagem} onChange={v => set('escritorioImagem', v)}
+              hint="Adicione uma imagem profissional que ficará no sobre da Landing Page."
+              size="500px por 575px"
+            />
+          </Field>
         </div>
       </SectionCard>
 
@@ -254,11 +262,13 @@ export default function LandingPageConfig() {
               <textarea className={styles.textarea} rows={4} value={data.advogadoConteudo} onChange={e => set('advogadoConteudo', e.target.value)} />
             </Field>
           </div>
-          <ImageUpload
-            value={data.advogadoImagem} onChange={v => set('advogadoImagem', v)}
-            hint="Adicione uma imagem profissional do advogado que ficará no sobre da Landing Page."
-            size="475px por 600px"
-          />
+          <Field label="IMAGEM DO ADVOGADO">
+            <ImageUpload
+              value={data.advogadoImagem} onChange={v => set('advogadoImagem', v)}
+              hint="Adicione uma imagem profissional do advogado que ficará no sobre da Landing Page."
+              size="475px por 600px"
+            />
+          </Field>
         </div>
       </SectionCard>
 

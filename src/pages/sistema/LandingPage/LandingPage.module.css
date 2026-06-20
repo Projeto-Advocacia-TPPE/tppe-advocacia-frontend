@@ -98,8 +98,32 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 24px;
-  align-items: start;
+  align-items: stretch;
 }
+
+/* Coluna de imagem/textarea direto no grid estica para igualar a oposta */
+.row2 > .field {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0;
+}
+
+.row2 > .field > .imgBox {
+  flex: 1;
+}
+
+/* Coluna com vários campos (div wrapper) também estica o último campo */
+.row2 > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.row2 > div > .field:last-child {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
 
 /* ── Image upload ── */
 .imgBox {
