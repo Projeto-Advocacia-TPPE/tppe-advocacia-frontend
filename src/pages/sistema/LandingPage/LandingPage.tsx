@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { getOfficeConfigUI, updateOfficeConfig, uploadMedia } from '../../../services/officeConfigService';
 import type { LandingPageData, Diferencial, AreaAtuacao } from './types';
+import ImagePositionModal from '../../../components/sistema/shared/ImagePositionModal';
 
 const EMPTY_DIFERENCIAIS: Diferencial[] = [
   { id: 1, titulo: '', descricao: '' },
@@ -24,9 +25,9 @@ const EMPTY_AREAS: AreaAtuacao[] = [
 const EMPTY_DATA: LandingPageData = {
   email: '', endereco: '', telefone: '',
   linkedin: '', instagram: '',
-  heroTitulo: '', heroSubtexto: '', heroImagem: '',
-  escritorioTitulo: '', escritorioConteudo: '', escritorioImagem: '',
-  advogadoTitulo: '', advogadoOab: '', advogadoConteudo: '', advogadoImagem: '',
+  heroTitulo: '', heroSubtexto: '', heroImagem: '', heroImagemPos: { x: 50, y: 50 },
+  escritorioTitulo: '', escritorioConteudo: '', escritorioImagem: '', escritorioImagemPos: { x: 50, y: 50 },
+  advogadoTitulo: '', advogadoOab: '', advogadoConteudo: '', advogadoImagem: '', advogadoImagemPos: { x: 50, y: 50 },
   diferenciais: EMPTY_DIFERENCIAIS,
   areas: EMPTY_AREAS,
 };
@@ -43,11 +44,16 @@ interface ImageUploadProps {
   onChange: (url: string) => void;
   hint: string;
   size: string;
+  position?: { x: number; y: number };
+  onPositionChange?: (pos: { x: number; y: number }) => void;
+  aspectRatio?: number;
+  posLabel?: string;
 }
-function ImageUpload({ value, onChange, hint, size }: ImageUploadProps) {
+function ImageUpload({ value, onChange, hint, size, position = { x: 50, y: 50 }, onPositionChange, aspectRatio = 1, posLabel = 'Imagem' }: ImageUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false);
 
   async function handleFile(file: File) {
     setUploading(true);
@@ -55,38 +61,68 @@ function ImageUpload({ value, onChange, hint, size }: ImageUploadProps) {
     try {
       const url = await uploadMedia(file);
       onChange(url);
-    } catch {
-      setError('Falha no upload. Tente novamente.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha no upload. Tente novamente.');
     } finally {
       setUploading(false);
     }
   }
 
   return (
-    <div
-      className={styles.imgBox}
-      onDragOver={e => e.preventDefault()}
-      onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
-    >
-      {value ? (
-        <img src={value} alt="preview" className={styles.imgPreview} />
-      ) : (
-        <>
-          {uploading
-            ? <Loader2 size={32} className={styles.imgIcon} style={{ animation: 'spin 1s linear infinite' }} />
-            : <ImageIcon size={32} className={styles.imgIcon} />
-          }
-          <p className={styles.imgHint}>{hint}</p>
-          <p className={styles.imgSize}>A imagem deve ser {size}.</p>
-        </>
+    <>
+      <div
+        className={styles.imgBox}
+        onDragOver={e => e.preventDefault()}
+        onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
+      >
+        {value ? (
+          <>
+            <div className={styles.imgWithPos}>
+              <img
+                src={value} alt="preview" className={styles.imgPreview}
+                style={{ objectPosition: `${position.x}% ${position.y}%` }}
+              />
+            </div>
+            <div className={styles.imgActions}>
+              {onPositionChange && (
+                <button className={styles.imgBtnSecondary} onClick={() => setShowModal(true)}>
+                  Reposicionar
+                </button>
+              )}
+              <button className={styles.imgBtn} disabled={uploading} onClick={() => inputRef.current?.click()}>
+                {uploading ? 'Enviando...' : 'Trocar Imagem'}
+              </button>
+            </div>
+            {error && <p style={{ color: '#e74c3c', fontSize: 12, marginTop: 4 }}>{error}</p>}
+          </>
+        ) : (
+          <>
+            {uploading
+              ? <Loader2 size={32} className={styles.imgIcon} style={{ animation: 'spin 1s linear infinite' }} />
+              : <ImageIcon size={32} className={styles.imgIcon} />
+            }
+            <p className={styles.imgHint}>{hint}</p>
+            <p className={styles.imgSize}>A imagem deve ser {size}.</p>
+            {error && <p style={{ color: '#e74c3c', fontSize: 12, marginTop: 4 }}>{error}</p>}
+            <button className={styles.imgBtn} disabled={uploading} onClick={() => inputRef.current?.click()}>
+              {uploading ? 'Enviando...' : 'Carregar Imagem'}
+            </button>
+          </>
+        )}
+        <input ref={inputRef} type="file" accept="image/*" style={{ display: 'none' }}
+          onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
+      </div>
+      {showModal && value && onPositionChange && (
+        <ImagePositionModal
+          src={value}
+          position={position}
+          aspectRatio={aspectRatio}
+          label={posLabel}
+          onConfirm={pos => { onPositionChange(pos); setShowModal(false); }}
+          onCancel={() => setShowModal(false)}
+        />
       )}
-      {error && <p style={{ color: '#e74c3c', fontSize: 12, marginTop: 4 }}>{error}</p>}
-      <button className={styles.imgBtn} disabled={uploading} onClick={() => inputRef.current?.click()}>
-        {uploading ? 'Enviando...' : value ? 'Trocar Imagem' : 'Carregar Imagem'}
-      </button>
-      <input ref={inputRef} type="file" accept="image/*" style={{ display: 'none' }}
-        onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
-    </div>
+    </>
   );
 }
 
@@ -182,16 +218,18 @@ export default function LandingPageConfig() {
       {/* ── Dados Institucionais ── */}
       <SectionCard icon={<Building2 size={20} />} title="Dados Institucionais">
         <div className={styles.row2}>
-          <Field label="E-MAIL DE CONTATO">
-            <input className={styles.input} value={data.email} onChange={e => set('email', e.target.value)} />
-          </Field>
+          <div>
+            <Field label="E-MAIL DE CONTATO">
+              <input className={styles.input} value={data.email} onChange={e => set('email', e.target.value)} />
+            </Field>
+            <Field label="TELEFONE">
+              <input className={styles.input} value={data.telefone} onChange={e => set('telefone', e.target.value)} />
+            </Field>
+          </div>
           <Field label="ENDEREÇO">
-            <textarea className={styles.textarea} rows={3} value={data.endereco} onChange={e => set('endereco', e.target.value)} />
+            <textarea className={styles.textarea} rows={5} value={data.endereco} onChange={e => set('endereco', e.target.value)} />
           </Field>
         </div>
-        <Field label="TELEFONE">
-          <input className={styles.input} style={{ maxWidth: 260 }} value={data.telefone} onChange={e => set('telefone', e.target.value)} />
-        </Field>
       </SectionCard>
 
       {/* ── Links ── */}
@@ -206,19 +244,27 @@ export default function LandingPageConfig() {
 
       {/* ── Hero ── */}
       <SectionCard icon={<Star size={20} />} title="Hero (Destaque Principal)">
-        <Field label="TÍTULO DO IMPACTO">
-          <input className={styles.input} value={data.heroTitulo} onChange={e => set('heroTitulo', e.target.value)} />
-        </Field>
-        <Field label="SUBTEXTO DE APOIO">
-          <textarea className={styles.textarea} rows={3} value={data.heroSubtexto} onChange={e => set('heroSubtexto', e.target.value)} />
-        </Field>
-        <Field label="IMAGEM (HERO)">
-          <ImageUpload
-            value={data.heroImagem} onChange={v => set('heroImagem', v)}
-            hint="Adicione uma imagem profissional que será principal da Landing Page."
-            size="420px por 600px"
-          />
-        </Field>
+        <div className={styles.row2}>
+          <div>
+            <Field label="TÍTULO DO IMPACTO">
+              <input className={styles.input} value={data.heroTitulo} onChange={e => set('heroTitulo', e.target.value)} />
+            </Field>
+            <Field label="SUBTEXTO DE APOIO">
+              <textarea className={styles.textarea} rows={3} value={data.heroSubtexto} onChange={e => set('heroSubtexto', e.target.value)} />
+            </Field>
+          </div>
+          <Field label="IMAGEM (HERO)">
+            <ImageUpload
+              value={data.heroImagem} onChange={v => set('heroImagem', v)}
+              hint="Adicione uma imagem profissional que será principal da Landing Page."
+              size="420px por 600px"
+              position={data.heroImagemPos}
+              onPositionChange={pos => set('heroImagemPos', pos)}
+              aspectRatio={420 / 600}
+              posLabel="Hero"
+            />
+          </Field>
+        </div>
       </SectionCard>
 
       {/* ── Sobre Escritório ── */}
@@ -232,11 +278,17 @@ export default function LandingPageConfig() {
               <textarea className={styles.textarea} rows={5} value={data.escritorioConteudo} onChange={e => set('escritorioConteudo', e.target.value)} />
             </Field>
           </div>
-          <ImageUpload
-            value={data.escritorioImagem} onChange={v => set('escritorioImagem', v)}
-            hint="Adicione uma imagem profissional que ficará no sobre da Landing Page."
-            size="500px por 575px"
-          />
+          <Field label="IMAGEM DO ESCRITÓRIO">
+            <ImageUpload
+              value={data.escritorioImagem} onChange={v => set('escritorioImagem', v)}
+              hint="Adicione uma imagem profissional que ficará no sobre da Landing Page."
+              size="500px por 575px"
+              position={data.escritorioImagemPos}
+              onPositionChange={pos => set('escritorioImagemPos', pos)}
+              aspectRatio={500 / 575}
+              posLabel="Sobre Escritório"
+            />
+          </Field>
         </div>
       </SectionCard>
 
@@ -254,11 +306,17 @@ export default function LandingPageConfig() {
               <textarea className={styles.textarea} rows={4} value={data.advogadoConteudo} onChange={e => set('advogadoConteudo', e.target.value)} />
             </Field>
           </div>
-          <ImageUpload
-            value={data.advogadoImagem} onChange={v => set('advogadoImagem', v)}
-            hint="Adicione uma imagem profissional do advogado que ficará no sobre da Landing Page."
-            size="475px por 600px"
-          />
+          <Field label="IMAGEM DO ADVOGADO">
+            <ImageUpload
+              value={data.advogadoImagem} onChange={v => set('advogadoImagem', v)}
+              hint="Adicione uma imagem profissional do advogado que ficará no sobre da Landing Page."
+              size="475px por 600px"
+              position={data.advogadoImagemPos}
+              onPositionChange={pos => set('advogadoImagemPos', pos)}
+              aspectRatio={475 / 600}
+              posLabel="Sobre o Advogado"
+            />
+          </Field>
         </div>
       </SectionCard>
 

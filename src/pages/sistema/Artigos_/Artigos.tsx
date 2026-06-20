@@ -134,10 +134,11 @@ export default function Artigos() {
     try {
       await criarArtigo(buildCreatePayload({
         titulo:    dados.titulo,
-        conteudo:  dados.conteudo ?? '',
-        categoria: dados.categoria ?? '',
-        resumo:    dados.resumo ?? '',
+        conteudo:  dados.conteudo,
+        categoria: dados.categoria,
+        resumo:    dados.resumo,
         imagem:    dados.imagem,
+        imagemPos: dados.imagemPos,
         status:    dados.status,
       }));
       setView('lista');
@@ -156,10 +157,11 @@ export default function Artigos() {
     try {
       await atualizarArtigo(selected.id, buildUpdatePayload({
         titulo:    dados.titulo,
-        conteudo:  dados.conteudo ?? '',
-        categoria: dados.categoria ?? '',
-        resumo:    dados.resumo ?? '',
+        conteudo:  dados.conteudo,
+        categoria: dados.categoria,
+        resumo:    dados.resumo,
         imagem:    dados.imagem,
+        imagemPos: dados.imagemPos,
         status:    dados.status,
       }));
       setView('lista');
@@ -176,10 +178,11 @@ export default function Artigos() {
     try {
       const criado = await criarArtigo(buildCreatePayload({
         titulo:    dados.titulo,
-        conteudo:  dados.conteudo ?? '',
-        categoria: dados.categoria ?? '',
-        resumo:    dados.resumo ?? '',
+        conteudo:  dados.conteudo,
+        categoria: dados.categoria,
+        resumo:    dados.resumo,
         imagem:    dados.imagem,
+        imagemPos: dados.imagemPos,
         status:    dados.status,
       }));
       
@@ -200,10 +203,11 @@ export default function Artigos() {
     try {
       const atualizado = await atualizarArtigo(selected.id, buildUpdatePayload({
         titulo:    dados.titulo,
-        conteudo:  dados.conteudo ?? '',
-        categoria: dados.categoria ?? '',
-        resumo:    dados.resumo ?? '',
+        conteudo:  dados.conteudo,
+        categoria: dados.categoria,
+        resumo:    dados.resumo,
         imagem:    dados.imagem,
+        imagemPos: dados.imagemPos,
         status:    dados.status,
       }));
       setArtigos(prev => prev.map(a => a.id === selected.id ? detailToArtigo(atualizado) : a));

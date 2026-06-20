@@ -12,6 +12,7 @@ interface ArticleDetail {
   category: string | null;
   summary: string | null;
   cover_image_url: string | null;
+  cover_image_position: string | null;
   status: string;
   author_name: string;
   created_at: string;
@@ -55,7 +56,7 @@ export default function ArtigoPage() {
           </div>
         </header>
         <article className={styles.article}>
-          <div style={{ maxWidth: 700, margin: '48px auto', padding: '0 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ maxWidth: 800, margin: '48px auto', padding: '0 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
             {[30, 80, 60, 100, 95, 85, 70].map((w, i) => (
               <div key={i} style={{
                 height: i === 1 ? 36 : 14,
@@ -83,7 +84,7 @@ export default function ArtigoPage() {
           </div>
         </header>
         <article className={styles.article}>
-          <p style={{ maxWidth: 700, margin: '48px auto', padding: '0 24px', color: 'var(--crimson, #c0392b)' }}>
+          <p style={{ maxWidth: 800, margin: '48px auto', padding: '0 24px', color: 'var(--crimson, #c0392b)' }}>
             {erro ?? 'Artigo não encontrado.'}
           </p>
         </article>
@@ -137,7 +138,12 @@ export default function ArtigoPage() {
 
         {artigo.cover_image_url && (
           <div className={styles.coverWrap}>
-            <img src={artigo.cover_image_url} alt={artigo.title} className={styles.cover} />
+            <img
+              src={artigo.cover_image_url}
+              alt={artigo.title}
+              className={styles.cover}
+              style={{ objectPosition: artigo.cover_image_position ?? '50% 50%' }}
+            />
           </div>
         )}
 

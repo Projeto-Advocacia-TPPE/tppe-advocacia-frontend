@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
-  House,
-  Users,
+  UserCog,
   Layout,
   FileText,
   UserPlus,
@@ -22,8 +21,7 @@ import { logout } from '../../../services/auth';
 import styles from './Sidebar.module.css';
 
 const NAV_ITEMS = [
-  { label: 'Início',        href: '/sistema',               icon: House,        adminOnly: false },
-  { label: 'Usuários',      href: '/sistema/usuarios',      icon: Users,        adminOnly: true  },
+  { label: 'Usuários',      href: '/sistema/usuarios',      icon: UserCog,      adminOnly: true  },
   { label: 'Landing Page',  href: '/sistema/landing-page',  icon: Layout,       adminOnly: false },
   { label: 'Artigos',       href: '/sistema/artigos',        icon: FileText,     adminOnly: false },
   { label: 'Leads',         href: '/sistema/leads',          icon: UserPlus,     adminOnly: false },
@@ -32,7 +30,7 @@ const NAV_ITEMS = [
   { label: 'Processos',     href: '/sistema/processos',      icon: Briefcase,    adminOnly: false },
   { label: 'Tarefas',       href: '/sistema/tarefas',        icon: LayoutList,   adminOnly: false },
   { label: 'Notificações',  href: '/sistema/notificacoes',   icon: Bell,         adminOnly: false },
-  { label: 'Logs de API',   href: '/sistema/logs-api',       icon: Activity,     adminOnly: true  },
+  { label: 'Logs DataJud',  href: '/sistema/logs-api',       icon: Activity,     adminOnly: true  },
 ];
 
 export default function Sidebar() {

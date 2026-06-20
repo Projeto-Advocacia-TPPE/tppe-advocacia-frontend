@@ -24,17 +24,20 @@ export interface LandingPageData {
   heroTitulo: string;
   heroSubtexto: string;
   heroImagem: string;
+  heroImagemPos: { x: number; y: number };
 
   // Sobre Escritório
   escritorioTitulo: string;
   escritorioConteudo: string;
   escritorioImagem: string;
+  escritorioImagemPos: { x: number; y: number };
 
   // Sobre Advogado
   advogadoTitulo: string;
   advogadoOab: string;
   advogadoConteudo: string;
   advogadoImagem: string;
+  advogadoImagemPos: { x: number; y: number };
 
   // Diferenciais
   diferenciais: Diferencial[];

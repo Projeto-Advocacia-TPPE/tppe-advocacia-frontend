@@ -1,4 +1,4 @@
-import { apiRequest } from './api';
+import { apiRequest, getAccessToken, clearAccessToken, ApiError } from './api';
 import type { SuccessResponse } from './api';
 import type { LandingPageData } from '../pages/sistema/LandingPage/types';
 
@@ -17,15 +17,24 @@ export interface OfficeConfigAPI {
   hero_title: string | null;
   hero_subtitle: string | null;
   hero_image_url: string | null;
+  hero_image_position: string | null;
   about_title: string | null;
   about_description: string | null;
   about_image_url: string | null;
+  about_image_position: string | null;
   lawyer_name: string | null;
   lawyer_oab: string | null;
   lawyer_description: string | null;
   lawyer_image_url: string | null;
+  lawyer_image_position: string | null;
   differentials: { title: string; description: string }[];
   areas_of_practice: { title: string; description: string }[];
+}
+
+function parsePos(s: string | null): { x: number; y: number } {
+  if (!s) return { x: 50, y: 50 };
+  const [x, y] = s.split(',').map(Number);
+  return (isNaN(x) || isNaN(y)) ? { x: 50, y: 50 } : { x, y };
 }
 
 function apiToUI(api: OfficeConfigAPI): LandingPageData {
@@ -38,13 +47,16 @@ function apiToUI(api: OfficeConfigAPI): LandingPageData {
     heroTitulo: api.hero_title ?? '',
     heroSubtexto: api.hero_subtitle ?? '',
     heroImagem: api.hero_image_url ?? '',
+    heroImagemPos: parsePos(api.hero_image_position),
     escritorioTitulo: api.about_title ?? '',
     escritorioConteudo: api.about_description ?? '',
     escritorioImagem: api.about_image_url ?? '',
+    escritorioImagemPos: parsePos(api.about_image_position),
     advogadoTitulo: api.lawyer_name ?? '',
     advogadoOab: api.lawyer_oab ?? '',
     advogadoConteudo: api.lawyer_description ?? '',
     advogadoImagem: api.lawyer_image_url ?? '',
+    advogadoImagemPos: parsePos(api.lawyer_image_position),
     diferenciais: (api.differentials ?? []).map((d, i) => ({
       id: i + 1,
       titulo: d.title,
@@ -68,13 +80,16 @@ function uiToApi(ui: LandingPageData): Omit<OfficeConfigAPI, 'id' | 'cnpj' | 'wh
     hero_title: ui.heroTitulo || null,
     hero_subtitle: ui.heroSubtexto || null,
     hero_image_url: ui.heroImagem || null,
+    hero_image_position: `${Math.round(ui.heroImagemPos.x)},${Math.round(ui.heroImagemPos.y)}`,
     about_title: ui.escritorioTitulo || null,
     about_description: ui.escritorioConteudo || null,
     about_image_url: ui.escritorioImagem || null,
+    about_image_position: `${Math.round(ui.escritorioImagemPos.x)},${Math.round(ui.escritorioImagemPos.y)}`,
     lawyer_name: ui.advogadoTitulo || null,
     lawyer_oab: ui.advogadoOab || null,
     lawyer_description: ui.advogadoConteudo || null,
     lawyer_image_url: ui.advogadoImagem || null,
+    lawyer_image_position: `${Math.round(ui.advogadoImagemPos.x)},${Math.round(ui.advogadoImagemPos.y)}`,
     differentials: ui.diferenciais.map(d => ({ title: d.titulo, description: d.descricao })),
     areas_of_practice: ui.areas.map(a => ({ title: a.titulo, description: a.descricao })),
   };
@@ -101,8 +116,14 @@ export async function updateOfficeConfig(ui: LandingPageData): Promise<LandingPa
   return apiToUI(res.data);
 }
 
+const UPLOAD_ERROR_MESSAGES: Record<string, string> = {
+  FILE_TOO_LARGE:    'Arquivo muito grande. O limite é 5 MB.',
+  INVALID_MIME_TYPE: 'Tipo de arquivo não permitido. Envie uma imagem.',
+  VALIDATION_ERROR:  'Arquivo inválido.',
+  UNAUTHORIZED:      'Sessão expirada. Faça login novamente.',
+};
+
 export async function uploadMedia(file: File): Promise<string> {
-  const { getAccessToken } = await import('./api');
   const token = getAccessToken();
   const form = new FormData();
   form.append('file', file);
@@ -113,7 +134,22 @@ export async function uploadMedia(file: File): Promise<string> {
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
   });
 
-  if (!res.ok) throw new Error('Upload falhou');
+  if (res.status === 401) {
+    clearAccessToken();
+    if (window.location.pathname !== '/login') window.location.assign('/login');
+    throw new ApiError('Não autorizado', 401, 'UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({})) as { error?: { code?: string } };
+    const code = body?.error?.code ?? '';
+    throw new ApiError(
+      UPLOAD_ERROR_MESSAGES[code] ?? 'Falha no upload. Tente novamente.',
+      res.status,
+      code,
+    );
+  }
+
   const body = (await res.json()) as SuccessResponse<{ url: string }>;
   return body.data.url;
 }

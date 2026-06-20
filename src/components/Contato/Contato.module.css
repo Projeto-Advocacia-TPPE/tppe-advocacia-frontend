@@ -1,6 +1,6 @@
 .section { background: var(--cream); padding: 100px 0; }
 
-.inner { max-width: var(--max-width); margin: 0 auto; padding: 0 var(--px); }
+.inner { padding: 0 120px; }
 
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: start; }
 
@@ -231,5 +231,6 @@
 }
 
 @media (max-width: 900px) {
+  .inner { padding: 0 24px; }
   .grid { grid-template-columns: 1fr; gap: 40px; }
 }

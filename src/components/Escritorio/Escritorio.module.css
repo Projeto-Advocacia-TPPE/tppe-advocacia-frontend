@@ -4,9 +4,7 @@
 }
 
 .inner {
-  max-width: var(--max-width);
-  margin: 0 auto;
-  padding: 0 var(--px);
+  padding: 0 120px;
 }
 
 .grid {
@@ -26,14 +24,6 @@
   justify-content: center;
   position: relative;
   overflow: hidden;
-}
-.imgBox::after {
-  content: '';
-  position: absolute;
-  bottom: 0; right: 0;
-  width: 60%;
-  height: 4px;
-  background: var(--crimson);
 }
 
 /* Text */
@@ -83,12 +73,13 @@
 .linkSaiba:hover { gap: 12px; }
 
 .placeholder {
-  width: 120px;
-  height: auto;
-  opacity: 0.3;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 /* Responsive */
 @media (max-width: 900px) {
+  .inner { padding: 0 24px; }
   .grid { grid-template-columns: 1fr; gap: 40px; }
 }

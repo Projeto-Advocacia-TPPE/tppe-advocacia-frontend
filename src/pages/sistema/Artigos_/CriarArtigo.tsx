@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import VisualizarArtigo from './VisualizarArtigo';
 import { uploadMedia } from '../../../services/officeConfigService';
+import ImagePositionModal from '../../../components/sistema/shared/ImagePositionModal';
 import styles from './CriarArtigo.module.css';
 
 /* ─── Types ─── */
@@ -57,13 +58,12 @@ export default function CriarArtigo({ onVoltar, onSalvar, onAutoSalvar, inicial,
   // conteudo em ref para sempre ter o valor mais recente sem problema de closure
   const conteudoRef = useRef<string>(inicial?.conteudo ?? '');
 
-  const [capaPos, setCapaPos] = useState({ x: 50, y: 50 });
-  const dragRef    = useRef<{ startX: number; startY: number; posX: number; posY: number } | null>(null);
+  const [capaPos, setCapaPos] = useState(inicial?.imagemPos ?? { x: 50, y: 50 });
+  const [showPosModal, setShowPosModal] = useState(false);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const editorRef  = useRef<HTMLDivElement>(null);
-  const capaRef    = useRef<HTMLInputElement>(null);
-  const capaImgRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
+  const capaRef   = useRef<HTMLInputElement>(null);
 
   /* ── Restaura o editor sempre que preview fecha ── */
   useEffect(() => {
@@ -92,6 +92,7 @@ export default function CriarArtigo({ onVoltar, onSalvar, onAutoSalvar, inicial,
         status,
         resumo,
         imagem: capa,
+        imagemPos: capaPos,
         conteudo: conteudoRef.current,
       });
       setAutoSaveMsg('saved');
@@ -130,30 +131,6 @@ export default function CriarArtigo({ onVoltar, onSalvar, onAutoSalvar, inicial,
     }
   }
 
-  function handleCapaMouseDown(e: React.MouseEvent) {
-    e.preventDefault();
-    dragRef.current = { startX: e.clientX, startY: e.clientY, posX: capaPos.x, posY: capaPos.y };
-    window.addEventListener('mousemove', handleCapaDrag);
-    window.addEventListener('mouseup', handleCapaDragEnd);
-  }
-
-  function handleCapaDrag(e: MouseEvent) {
-    if (!dragRef.current || !capaImgRef.current) return;
-    const container = capaImgRef.current.getBoundingClientRect();
-    const dx = ((e.clientX - dragRef.current.startX) / container.width)  * -100;
-    const dy = ((e.clientY - dragRef.current.startY) / container.height) * -100;
-    setCapaPos({
-      x: Math.min(100, Math.max(0, dragRef.current.posX + dx)),
-      y: Math.min(100, Math.max(0, dragRef.current.posY + dy)),
-    });
-  }
-
-  function handleCapaDragEnd() {
-    dragRef.current = null;
-    window.removeEventListener('mousemove', handleCapaDrag);
-    window.removeEventListener('mouseup', handleCapaDragEnd);
-  }
-
   /* ── Salvar manual ── */
   function handleSalvar() {
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
@@ -164,6 +141,7 @@ export default function CriarArtigo({ onVoltar, onSalvar, onAutoSalvar, inicial,
       status,
       resumo,
       imagem: capa,
+      imagemPos: capaPos,
       conteudo: conteudoRef.current,
     });
   }
@@ -188,7 +166,7 @@ export default function CriarArtigo({ onVoltar, onSalvar, onAutoSalvar, inicial,
     // Evita salvar se o título e o conteúdo estiverem vazios (previne autosaves acidentais logo ao abrir)
     if (!titulo && !resumo && !conteudoRef.current) return;
     scheduleAutoSave();
-  }, [titulo, resumo, categoria, status, capa]);
+  }, [titulo, resumo, categoria, status, capa, capaPos]);
 
   /* ── Snapshot para preview ── */
   function buildSnapshot() {
@@ -327,24 +305,34 @@ export default function CriarArtigo({ onVoltar, onSalvar, onAutoSalvar, inicial,
           <input ref={capaRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleCapaChange} />
         </div>
       ) : (
-        <div className={styles.capaPreview} ref={capaImgRef}>
-          <img
-            src={capa} alt="Capa" className={styles.capaImg}
-            style={{ objectPosition: `${capaPos.x}% ${capaPos.y}%` }}
-            onMouseDown={handleCapaMouseDown} draggable={false}
-          />
-          <div className={styles.capaHint}>
-            <span className={styles.capaHintIcon}>↕ ↔</span> Arraste para reposicionar
+        <>
+          <div className={styles.capaPreview}>
+            <img
+              src={capa} alt="Capa" className={styles.capaImg}
+              style={{ objectPosition: `${capaPos.x}% ${capaPos.y}%` }}
+              draggable={false}
+            />
+            <div className={styles.capaActions}>
+              <button className={styles.capaActionBtn} type="button" onClick={() => setShowPosModal(true)}>Reposicionar</button>
+              <button className={styles.capaActionBtn} type="button" onClick={() => capaRef.current?.click()}>Trocar</button>
+              <button className={`${styles.capaActionBtn} ${styles.capaActionDanger}`} type="button"
+                onClick={() => { setCapa(undefined); setCapaPos({ x: 50, y: 50 }); }}>
+                Remover
+              </button>
+            </div>
+            <input ref={capaRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleCapaChange} />
           </div>
-          <div className={styles.capaActions}>
-            <button className={styles.capaActionBtn} type="button" onClick={() => capaRef.current?.click()}>Trocar</button>
-            <button className={`${styles.capaActionBtn} ${styles.capaActionDanger}`} type="button"
-              onClick={() => { setCapa(undefined); setCapaPos({ x: 50, y: 50 }); }}>
-              Remover
-            </button>
-          </div>
-          <input ref={capaRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleCapaChange} />
-        </div>
+          {showPosModal && (
+            <ImagePositionModal
+              src={capa}
+              position={capaPos}
+              aspectRatio={1375 / 520}
+              label="capa do artigo"
+              onConfirm={pos => { setCapaPos(pos); setShowPosModal(false); }}
+              onCancel={() => setShowPosModal(false)}
+            />
+          )}
+        </>
       )}
 
       {/* ── Editor ── */}

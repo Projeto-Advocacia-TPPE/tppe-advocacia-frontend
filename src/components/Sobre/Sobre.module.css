@@ -1,13 +1,7 @@
 .section { background: var(--white); padding: 100px 0; }
 
 .inner {
-  max-width: var(--max-width);
-  margin: 0 auto;
-  display: flex;
-  padding: 0 58px 0 130px;
-  justify-content: space-between;
-  align-items: center;
-  align-self: stretch;
+  padding: 0 120px;
 }
 
 .grid {
@@ -25,7 +19,8 @@
 }
 
 .imgBox {
-  width: 400px;
+  width: 476px;
+  max-width: 476px;
   height: 600px;
   background: linear-gradient(160deg, #2a3f6f 0%, #1b2a4a 100%);
   border-radius: 2px;
