@@ -4,9 +4,7 @@
 }
 
 .inner {
-  max-width: var(--max-width);
-  margin: 0 auto;
-  padding: 0 var(--px);
+  padding: 0 120px;
 }
 
 .grid {
@@ -82,5 +80,6 @@
 
 /* Responsive */
 @media (max-width: 900px) {
+  .inner { padding: 0 24px; }
   .grid { grid-template-columns: 1fr; gap: 40px; }
 }

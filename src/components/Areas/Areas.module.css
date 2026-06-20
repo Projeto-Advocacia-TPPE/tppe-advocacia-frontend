@@ -42,7 +42,7 @@
   font-weight: 700;
   padding-bottom: 14px;
   border-bottom: 2px solid var(--crimson);
-  display: inline-block;
+  display: block;
   margin-bottom: 16px;
 }
 
