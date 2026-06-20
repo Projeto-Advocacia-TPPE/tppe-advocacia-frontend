@@ -257,10 +257,8 @@
   height: 220px;
   overflow: hidden;
   border-radius: 10px;
-  cursor: grab;
   background: #111;
 }
-.capaPreview:active { cursor: grabbing; }
 
 .capaImg {
   width: 100%;
@@ -270,30 +268,6 @@
   user-select: none;
   transition: object-position .05s;
 }
-
-/* Drag hint — shown on hover */
-.capaHint {
-  position: absolute;
-  bottom: 44px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0,0,0,.55);
-  color: #fff;
-  font-size: .75rem;
-  font-weight: 600;
-  padding: 5px 14px;
-  border-radius: 20px;
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .2s;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--font-body);
-}
-.capaHintIcon { font-size: .85rem; }
-.capaPreview:hover .capaHint { opacity: 1; }
 
 /* Action buttons on top of image */
 .capaActions {

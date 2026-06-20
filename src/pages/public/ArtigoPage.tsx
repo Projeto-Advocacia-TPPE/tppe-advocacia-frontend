@@ -12,6 +12,7 @@ interface ArticleDetail {
   category: string | null;
   summary: string | null;
   cover_image_url: string | null;
+  cover_image_position: string | null;
   status: string;
   author_name: string;
   created_at: string;
@@ -137,7 +138,12 @@ export default function ArtigoPage() {
 
         {artigo.cover_image_url && (
           <div className={styles.coverWrap}>
-            <img src={artigo.cover_image_url} alt={artigo.title} className={styles.cover} />
+            <img
+              src={artigo.cover_image_url}
+              alt={artigo.title}
+              className={styles.cover}
+              style={{ objectPosition: artigo.cover_image_position ?? '50% 50%' }}
+            />
           </div>
         )}
 

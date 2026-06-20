@@ -7,6 +7,7 @@ export default function Hero() {
   const title    = config?.hero_title    ?? 'Soluções jurídicas para empresas que querem crescer com segurança';
   const subtitle = config?.hero_subtitle ?? 'Assessoria jurídica especializada com foco em resultados práticos e estratégias personalizadas para o seu negócio.';
   const imgUrl   = config?.hero_image_url ?? '/placeholder.png';
+  const imgPos   = config?.hero_image_position ? config.hero_image_position.split(',').map(v => `${v}%`).join(' ') : '50% 50%';
 
   return (
     <section id="hero" className={styles.hero}>
@@ -26,7 +27,7 @@ export default function Hero() {
         <div className={styles.divider} />
 
         <div className={styles.visual} aria-hidden="true">
-          <img src={imgUrl} alt="" className={styles.placeholder} />
+          <img src={imgUrl} alt="" className={styles.placeholder} style={{ objectPosition: imgPos }} />
         </div>
       </div>
     </section>

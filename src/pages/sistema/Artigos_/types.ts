@@ -10,6 +10,7 @@ export interface Artigo {
   data: string; // ex: '12 Mai, 2024'
   ultimaEdicao?: string;
   imagem?: string;
+  imagemPos?: { x: number; y: number };
 }
 
 export interface LogRegistro {

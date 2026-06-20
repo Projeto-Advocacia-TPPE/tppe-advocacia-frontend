@@ -28,6 +28,7 @@ export type ArticleDetail = {
   category: string;
   summary: string;
   cover_image_url: string;
+  cover_image_position: string | null;
   status: ArticleStatus;
   author_id: number;
   author_name: string;
@@ -41,6 +42,7 @@ export type ArticleCreate = {
   category: string;
   summary: string;
   cover_image_url: string;
+  cover_image_position?: string | null;
   status: ArticleStatus;
 };
 
@@ -76,6 +78,11 @@ function formatRelative(iso: string): string {
 }
 
 export function detailToArtigo(a: ArticleDetail): Artigo & { conteudo?: string } {
+  let imagemPos: { x: number; y: number } | undefined;
+  if (a.cover_image_position) {
+    const [x, y] = a.cover_image_position.split(',').map(Number);
+    if (!isNaN(x) && !isNaN(y)) imagemPos = { x, y };
+  }
   return {
     id:           a.id,
     titulo:       a.title,
@@ -84,6 +91,7 @@ export function detailToArtigo(a: ArticleDetail): Artigo & { conteudo?: string }
     status:       toStatus(a.status),
     resumo:       a.summary,
     imagem:       a.cover_image_url || undefined,
+    imagemPos,
     data:         formatDate(a.created_at),
     ultimaEdicao: formatRelative(a.updated_at),
     conteudo:     a.content,
@@ -165,15 +173,17 @@ export function buildCreatePayload(dados: {
   categoria: string;
   resumo: string;
   imagem?: string;
+  imagemPos?: { x: number; y: number };
   status: Status;
 }): ArticleCreate {
   return {
-    title:           dados.titulo,
-    content:         dados.conteudo,
-    category:        dados.categoria,
-    summary:         dados.resumo,
-    cover_image_url: dados.imagem ?? '',
-    status:          fromStatus(dados.status),
+    title:                dados.titulo,
+    content:              dados.conteudo,
+    category:             dados.categoria,
+    summary:              dados.resumo,
+    cover_image_url:      dados.imagem ?? '',
+    cover_image_position: dados.imagemPos ? `${Math.round(dados.imagemPos.x)},${Math.round(dados.imagemPos.y)}` : null,
+    status:               fromStatus(dados.status),
   };
 }
 
@@ -183,14 +193,16 @@ export function buildUpdatePayload(dados: {
   categoria?: string;
   resumo?: string;
   imagem?: string;
+  imagemPos?: { x: number; y: number };
   status?: Status;
 }): ArticleUpdate {
   const payload: ArticleUpdate = {};
-  if (dados.titulo    !== undefined) payload.title           = dados.titulo;
-  if (dados.conteudo  !== undefined) payload.content         = dados.conteudo;
-  if (dados.categoria !== undefined) payload.category        = dados.categoria;
-  if (dados.resumo    !== undefined) payload.summary         = dados.resumo;
-  if (dados.imagem    !== undefined) payload.cover_image_url = dados.imagem;
-  if (dados.status    !== undefined) payload.status          = fromStatus(dados.status);
+  if (dados.titulo)                  payload.title                = dados.titulo;
+  if (dados.conteudo)                payload.content              = dados.conteudo;
+  if (dados.categoria)               payload.category             = dados.categoria;
+  if (dados.resumo    !== undefined) payload.summary              = dados.resumo;
+  if (dados.imagem)                  payload.cover_image_url      = dados.imagem;
+  if (dados.imagemPos !== undefined) payload.cover_image_position = `${Math.round(dados.imagemPos.x)},${Math.round(dados.imagemPos.y)}`;
+  if (dados.status    !== undefined) payload.status               = fromStatus(dados.status);
   return payload;
 }
