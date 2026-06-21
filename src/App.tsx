@@ -122,7 +122,12 @@ export default function App() {
         </Route>
       </Routes>
     </BrowserRouter>
-    <Analytics />
+    <Analytics beforeSend={(event) => {
+      if (new URL(event.url).pathname.startsWith('/sistema') ||
+          new URL(event.url).pathname.startsWith('/login') ||
+          new URL(event.url).pathname.startsWith('/reset-password')) return null;
+      return event;
+    }} />
     </>
   );
 }
