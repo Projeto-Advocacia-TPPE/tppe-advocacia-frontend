@@ -11,6 +11,7 @@ import {
   LayoutList,
   Bell,
   Activity,
+  CalendarX2,
   User,
   PanelLeftClose,
   PanelLeftOpen,
@@ -31,6 +32,7 @@ const NAV_ITEMS = [
   { label: 'Tarefas',       href: '/sistema/tarefas',        icon: LayoutList,   adminOnly: false },
   { label: 'Notificações',  href: '/sistema/notificacoes',   icon: Bell,         adminOnly: false },
   { label: 'Logs DataJud',  href: '/sistema/logs-api',       icon: Activity,     adminOnly: true  },
+  { label: 'Feriados',      href: '/sistema/feriados',        icon: CalendarX2,   adminOnly: true  },
 ];
 
 export default function Sidebar() {

@@ -96,6 +96,17 @@
 
 .eventTime { opacity: .8; }
 
+.holidayChip {
+  font-size: .68rem; border-radius: 2px;
+  padding: 2px 4px; margin-bottom: 2px;
+  background: #fffde7; color: #795548;
+  border-left: 2px solid #f9a825;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  cursor: default;
+}
+
+.eventOverflow { font-size: .68rem; color: var(--gray); padding: 1px 4px; font-weight: 600; }
+
 .eventDots { display: none; justify-content: center; flex-wrap: wrap; gap: 3px; margin-top: 4px; }
 .eventDot  { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 .eventDotExtra { font-size: .55rem; font-weight: 700; color: var(--gray); line-height: 6px; }
@@ -239,7 +250,7 @@
   .calHeaderCell { padding: 8px 2px; font-size: .6rem; letter-spacing: 0; text-align: center; }
   .calCell { padding: 4px 2px 6px; min-height: 52px; display: flex; flex-direction: column; align-items: center; }
   .dayNum { font-size: .72rem; }
-  .eventChip { display: none; }
+  .eventChip, .holidayChip { display: none; }
   .eventDots { display: flex; }
   .gcalBanner { flex-direction: column; align-items: stretch; padding: 12px; }
   .gcalActions { flex-direction: column; align-items: stretch; gap: 8px; }
