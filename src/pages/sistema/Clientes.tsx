@@ -125,8 +125,8 @@ function errorMessage(error: unknown): string {
       return 'Este cliente possui processos ativos ou suspensos e não pode ser anonimizado.';
     }
     if (error.status === 403) return 'Somente administradores podem realizar esta operação.';
-    if (error.status === 409) return 'Já existe um cliente com este CPF ou CNPJ.';
-    if (error.status === 422) return 'Revise os campos informados antes de continuar.';
+    if (error.code === 'CLIENT_CPF_ALREADY_EXISTS') return 'Já existe um cliente com este CPF.';
+    if (error.code === 'CLIENT_CNPJ_ALREADY_EXISTS') return 'Já existe um cliente com este CNPJ.';
     return error.message;
   }
   return 'Não foi possível concluir a operação.';

@@ -57,6 +57,18 @@ export default function Contato() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (!form.nome.trim()) {
+      setError('Por favor, informe seu nome.');
+      return;
+    }
+    if (!form.email.trim()) {
+      setError('Por favor, informe seu e-mail.');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      setError('Informe um e-mail válido.');
+      return;
+    }
     setSubmitting(true);
     setError('');
     try {
@@ -158,7 +170,6 @@ export default function Contato() {
                     name="mensagem"
                     value={form.mensagem}
                     onChange={handleChange}
-                    required
                   />
                 </div>
                 <label className={styles.consent}>

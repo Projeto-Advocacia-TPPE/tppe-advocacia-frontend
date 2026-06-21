@@ -44,10 +44,27 @@ export class ApiError extends Error {
   }
 }
 
+function translatePydanticMsg(msg: string, ctx: Record<string, unknown> | undefined): string {
+  if (/String should have at most/.test(msg)) {
+    const max = ctx?.max_length ?? msg.match(/\d+/)?.[0] ?? '?';
+    return `Máximo de ${max} caracteres permitido.`;
+  }
+  if (/String should have at least/.test(msg)) {
+    const min = ctx?.min_length ?? msg.match(/\d+/)?.[0] ?? '?';
+    return `Mínimo de ${min} caracteres requerido.`;
+  }
+  if (msg === 'Field required') return 'Campo obrigatório.';
+  if (/valid email/i.test(msg)) return 'E-mail inválido.';
+  if (/valid integer/i.test(msg)) return 'Valor inválido.';
+  return msg;
+}
+
 function parseMessage(message: unknown): string {
   if (typeof message === 'string') return message;
   if (message && typeof message === 'object' && 'msg' in message) {
-    return String(message.msg);
+    const m = message as Record<string, unknown>;
+    const ctx = m.ctx && typeof m.ctx === 'object' ? (m.ctx as Record<string, unknown>) : undefined;
+    return translatePydanticMsg(String(m.msg), ctx);
   }
   return 'Não foi possível concluir a solicitação.';
 }

@@ -3,6 +3,7 @@ import {
   Building2, Link2, Star, BookOpen, UserRound,
   Shield, MapPin, ImageIcon, Pencil, Check, X, Loader2,
 } from 'lucide-react';
+import { ApiError } from '../../../services/api';
 import { getOfficeConfigUI, updateOfficeConfig, uploadMedia } from '../../../services/officeConfigService';
 import type { LandingPageData, Diferencial, AreaAtuacao } from './types';
 import ImagePositionModal from '../../../components/sistema/shared/ImagePositionModal';
@@ -154,6 +155,7 @@ export default function LandingPageConfig() {
   const [saved,   setSaved]   = useState<LandingPageData>(EMPTY_DATA);
   const [data,    setData]    = useState<LandingPageData>(EMPTY_DATA);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [saving,  setSaving]  = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const isDirty = !deepEqual(data, saved);
@@ -169,7 +171,7 @@ export default function LandingPageConfig() {
         setSaved(merged);
         setData(merged);
       })
-      .catch(() => {})
+      .catch(() => { setLoadError('Não foi possível carregar as configurações. Recarregue a página.'); })
       .finally(() => setLoading(false));
   }, []);
 
@@ -186,8 +188,10 @@ export default function LandingPageConfig() {
       const updated = await updateOfficeConfig(data);
       setSaved(updated);
       setData(updated);
-    } catch {
-      setSaveError('Erro ao salvar. Verifique sua conexão e tente novamente.');
+    } catch (err) {
+      setSaveError(
+        err instanceof ApiError ? err.message : 'Erro ao salvar. Verifique sua conexão e tente novamente.',
+      );
     } finally {
       setSaving(false);
     }
@@ -207,6 +211,14 @@ export default function LandingPageConfig() {
     return (
       <div className={styles.page} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300 }}>
         <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', color: '#666' }} />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className={styles.page}>
+        <p style={{ color: '#c0392b', fontSize: '0.95rem' }}>{loadError}</p>
       </div>
     );
   }

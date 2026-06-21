@@ -145,8 +145,8 @@ export default function Usuarios() {
       closeModal();
     } catch (err) {
       setFormError(
-        err instanceof ApiError && err.code === 'EMAIL_ALREADY_EXISTS'
-          ? 'Este e-mail já está cadastrado.'
+        err instanceof ApiError
+          ? (err.code === 'EMAIL_ALREADY_EXISTS' ? 'Este e-mail já está cadastrado.' : err.message)
           : 'Não foi possível criar o usuário.',
       );
     } finally {
@@ -173,8 +173,8 @@ export default function Usuarios() {
       closeModal();
     } catch (err) {
       setFormError(
-        err instanceof ApiError && err.code === 'EMAIL_ALREADY_EXISTS'
-          ? 'Este e-mail já pertence a outro usuário.'
+        err instanceof ApiError
+          ? (err.code === 'EMAIL_ALREADY_EXISTS' ? 'Este e-mail já pertence a outro usuário.' : err.message)
           : 'Não foi possível atualizar o usuário.',
       );
     } finally {
