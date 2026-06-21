@@ -16,27 +16,29 @@ export default function Navbar() {
 
   return (
     <nav className={styles.nav}>
-      <a href="#" className={styles.logo}>
-        <img src="/logo.png" alt="Vitor França" className={styles.logoImg} />
-      </a>
+      <div className={styles.inner}>
+        <a href="#" className={styles.logo}>
+          <img src="/logo.png" alt="Vitor França" className={styles.logoImg} />
+        </a>
 
-      <ul className={styles.links}>
-        {NAV_LINKS.map(({ label, href }) => (
-          <li key={href}>
-            <a href={href} className={styles.link}>{label}</a>
-          </li>
-        ))}
-      </ul>
+        <ul className={styles.links}>
+          {NAV_LINKS.map(({ label, href }) => (
+            <li key={href}>
+              <a href={href} className={styles.link}>{label}</a>
+            </li>
+          ))}
+        </ul>
 
-      <a href="#contato" className={styles.btnAgendar}>Agendar Consulta</a>
+        <a href="#contato" className={styles.btnAgendar}>Agendar Consulta</a>
 
-      <button
-        className={`${styles.hamburger} ${menuOpen ? styles.hamburgerOpen : ''}`}
-        onClick={() => setMenuOpen(prev => !prev)}
-        aria-label="Abrir menu"
-      >
-        <span /><span /><span />
-      </button>
+        <button
+          className={`${styles.hamburger} ${menuOpen ? styles.hamburgerOpen : ''}`}
+          onClick={() => setMenuOpen(prev => !prev)}
+          aria-label="Abrir menu"
+        >
+          <span /><span /><span />
+        </button>
+      </div>
 
       <div className={`${styles.drawer} ${menuOpen ? styles.drawerOpen : ''}`}>
         <ul className={styles.drawerLinks}>

@@ -1,6 +1,10 @@
 .section { background: var(--cream); padding: 100px 0; }
 
-.inner { padding: 0 120px; }
+.inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 var(--px);
+}
 
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: start; }
 
