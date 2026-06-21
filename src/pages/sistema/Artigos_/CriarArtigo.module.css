@@ -412,7 +412,7 @@
 .actionBar {
   position: fixed;
   bottom: 0;
-  left: 250px; 
+  left: 260px;
   right: 0;
   background: var(--white);
   border-top: 1.5px solid #f0f0f0;
@@ -484,9 +484,17 @@
 }
 
 @media (max-width: 650px) {
+  .pageTitle { font-size: 1.5rem; }
   .metaRow { grid-template-columns: 1fr; }
   .metaControls { flex-wrap: wrap; gap: 10px; }
   .editor { padding: 20px 18px; }
-  .actionRight { flex-wrap: wrap; gap: 8px; }
-  .btnPreview, .btnSalvar { flex: 1; justify-content: center; }
+  .actionRight { flex: 1; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+  .btnPreview, .btnSalvar { flex: 1; justify-content: center; min-width: 120px; }
+}
+
+@media (max-width: 480px) {
+  .pageTitle { font-size: 1.3rem; }
+  .actionBar { padding: 10px 16px; }
+  .actionLeft { font-size: .78rem; }
+  .wordCount { display: none; }
 }

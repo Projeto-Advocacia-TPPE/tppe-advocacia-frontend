@@ -140,11 +140,11 @@
 .drawerBtn:hover { background: var(--crimson-light); }
 
 @media (max-width: 900px) {
+  .nav        { height: 72px; }
   .links      { display: none; }
   .btnAgendar { display: none; }
   .hamburger  { display: flex; }
-  .drawer     { display: block; }
-  .logo { width: min(180px, 55%); height: auto; }
-  .logoImg { max-width: 100%; height: auto; }
-  .drawer { padding: 24px 24px 32px; }
+  .drawer     { display: block; top: 72px; padding: 24px 24px 32px; }
+  .logo       { width: min(160px, 50%); height: auto; }
+  .logoImg    { max-width: 100%; height: auto; }
 }

@@ -40,7 +40,7 @@ export default function VisualizarArtigo({ artigo, onVoltar, onPublicar }: Props
         </div>
         <div className={styles.navRight}>
           <button className={styles.btnVoltar} onClick={onVoltar} type="button">
-            <ArrowLeft size={15} /> Voltar ao Editor
+            <ArrowLeft size={15} /> <span className={styles.btnVoltarText}>Voltar ao Editor</span>
           </button>
           {artigo.status !== 'PUBLICADO' && onPublicar && (
             <button className={styles.btnPublicar} onClick={onPublicar} type="button">

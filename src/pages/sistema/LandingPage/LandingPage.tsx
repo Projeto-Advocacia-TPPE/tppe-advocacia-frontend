@@ -397,7 +397,7 @@ export default function LandingPageConfig() {
       {/* ── Bottom bar ── */}
       <div className={`${styles.bottomBar} ${isDirty || saveError ? styles.bottomBarVisible : ''}`}>
         {saveError && (
-          <span style={{ color: '#e74c3c', fontSize: 13, marginRight: 'auto' }}>{saveError}</span>
+          <span className={styles.bottomError}>{saveError}</span>
         )}
         {!saveError && (
           <span className={styles.bottomMsg}>

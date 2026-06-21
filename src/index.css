@@ -60,5 +60,6 @@ a {
 @media (max-width: 900px) {
   :root {
     --px: 24px;
+    --nav-height: 72px;
   }
 }
