@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   ChevronLeft, ChevronRight, Plus, X, Trash2, Pencil,
   CalendarDays, Clock, LayoutList, Scale, MapPin,
@@ -7,6 +8,10 @@ import {
   listAppointments, createAppointment, updateAppointment, deleteAppointment,
   type Appointment, type AppointmentType, type AppointmentWrite,
 } from '../../../services/appointments';
+import {
+  getGoogleStatus, getGoogleAuthUrl, disconnectGoogle, syncAllToGoogle,
+  type GoogleStatus,
+} from '../../../services/googleCalendar';
 import { calculateDeadline } from '../../../services/deadlines';
 import { listClients, type ClientListItem } from '../../../services/clients';
 import { listProcesses, type ProcessListItem } from '../../../services/processes';
@@ -517,6 +522,71 @@ export default function Agenda() {
   const [formSaving, setFormSaving] = useState(false);
   const [formError, setFormError] = useState('');
 
+  // Google Calendar
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [googleStatus, setGoogleStatus] = useState<GoogleStatus | null>(null);
+  const [googleBusy, setGoogleBusy] = useState(false);
+  const [googleMsg, setGoogleMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
+
+  useEffect(() => {
+    void getGoogleStatus()
+      .then(s => setGoogleStatus(s))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const result = searchParams.get('google_calendar');
+    if (result === 'connected') {
+      setGoogleMsg({ kind: 'ok', text: 'Google Calendar conectado com sucesso!' });
+      void getGoogleStatus().then(s => setGoogleStatus(s)).catch(() => {});
+    } else if (result === 'error') {
+      setGoogleMsg({ kind: 'err', text: 'Não foi possível conectar o Google Calendar.' });
+    }
+    if (result) {
+      searchParams.delete('google_calendar');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, []);
+
+  async function handleGoogleConnect() {
+    setGoogleBusy(true);
+    setGoogleMsg(null);
+    try {
+      const url = await getGoogleAuthUrl();
+      window.location.assign(url);
+    } catch {
+      setGoogleMsg({ kind: 'err', text: 'Não foi possível iniciar a conexão com o Google.' });
+      setGoogleBusy(false);
+    }
+  }
+
+  async function handleGoogleDisconnect() {
+    setGoogleBusy(true);
+    setGoogleMsg(null);
+    try {
+      await disconnectGoogle();
+      setGoogleStatus({ connected: false, connected_at: null, scope: null });
+      setGoogleMsg({ kind: 'ok', text: 'Google Calendar desconectado.' });
+    } catch {
+      setGoogleMsg({ kind: 'err', text: 'Não foi possível desconectar.' });
+    } finally {
+      setGoogleBusy(false);
+    }
+  }
+
+  async function handleGoogleSync() {
+    setGoogleBusy(true);
+    setGoogleMsg(null);
+    try {
+      const res = await syncAllToGoogle();
+      setGoogleMsg({ kind: 'ok', text: `Sincronização concluída: ${res.synced} compromisso${res.synced !== 1 ? 's' : ''} enviado${res.synced !== 1 ? 's' : ''}.${res.failed > 0 ? ` (${res.failed} falha${res.failed !== 1 ? 's' : ''})` : ''}` });
+    } catch {
+      setGoogleMsg({ kind: 'err', text: 'Erro ao sincronizar com o Google Calendar.' });
+    } finally {
+      setGoogleBusy(false);
+    }
+  }
+
   const loadYear = useCallback(async (y: number) => {
     setLoading(true);
     setPageError('');
@@ -621,6 +691,40 @@ export default function Agenda() {
       </div>
 
       {pageError && <p className={styles.pageError}>{pageError}</p>}
+
+      {googleStatus !== null && (
+        <div className={`${styles.gcalBanner} ${googleStatus.connected ? styles.gcalConnected : styles.gcalDisconnected}`}>
+          <div className={styles.gcalLeft}>
+            <CalendarDays size={18} className={styles.gcalIcon} />
+            {googleStatus.connected ? (
+              <span className={styles.gcalText}>Google Calendar conectado — compromissos criados aqui serão sincronizados automaticamente.</span>
+            ) : (
+              <span className={styles.gcalText}>Conecte o Google Calendar para sincronizar seus compromissos automaticamente.</span>
+            )}
+          </div>
+          <div className={styles.gcalActions}>
+            {googleMsg && (
+              <span className={googleMsg.kind === 'ok' ? styles.gcalOk : styles.gcalErr}>
+                {googleMsg.text}
+              </span>
+            )}
+            {googleStatus.connected ? (
+              <>
+                <button className={styles.gcalBtnSecondary} onClick={() => void handleGoogleSync()} disabled={googleBusy}>
+                  {googleBusy ? 'Sincronizando...' : 'Sincronizar agora'}
+                </button>
+                <button className={styles.gcalBtnDanger} onClick={() => void handleGoogleDisconnect()} disabled={googleBusy}>
+                  Desconectar
+                </button>
+              </>
+            ) : (
+              <button className={styles.gcalBtnPrimary} onClick={() => void handleGoogleConnect()} disabled={googleBusy}>
+                {googleBusy ? 'Aguarde...' : 'Conectar Google Calendar'}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className={styles.calendar}>
         <div className={styles.calHeader}>
