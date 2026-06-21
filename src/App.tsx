@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 
 function ScrollToHash() {
   const { hash } = useLocation();
@@ -82,6 +83,7 @@ function GoogleCalendarRedirect() {
 
 export default function App() {
   return (
+    <>
     <BrowserRouter>
       <ScrollToHash />
       <Routes>
@@ -120,5 +122,7 @@ export default function App() {
         </Route>
       </Routes>
     </BrowserRouter>
+    <Analytics />
+    </>
   );
 }
