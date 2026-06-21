@@ -504,6 +504,55 @@ function CalcModal({ onClose, onAppointmentCreated }: CalcModalProps) {
   );
 }
 
+// ── MobileDayModal ─────────────────────────────────────────
+interface MobileDayModalProps {
+  date: string;
+  events: Appointment[];
+  onClose: () => void;
+  onSelectEvent: (ev: Appointment) => void;
+  onNewEvent: (date: string) => void;
+}
+
+function MobileDayModal({ date, events, onClose, onSelectEvent, onNewEvent }: MobileDayModalProps) {
+  const dateFmt = new Date(date + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
+  return (
+    <div className={styles.overlayBottom} onClick={onClose}>
+      <div className={styles.mobileDaySheet} onClick={e => e.stopPropagation()}>
+        <div className={styles.mobileDayHandle} />
+        <div className={styles.mobileDayHeader}>
+          <span className={styles.mobileDayDate}>{dateFmt}</span>
+          <button className={styles.mobileDayClose} onClick={onClose}><X size={18} /></button>
+        </div>
+        <div className={styles.mobileDayList}>
+          {events.map(ev => {
+            const color = TYPE_COLOR[ev.type];
+            const { time } = fromStartsAt(ev.starts_at);
+            return (
+              <button
+                key={ev.id}
+                className={styles.mobileDayItem}
+                style={{ borderLeft: `3px solid ${color}` }}
+                onClick={() => onSelectEvent(ev)}
+              >
+                <span className={styles.mobileDayItemTime}>{time}</span>
+                <div className={styles.mobileDayItemInfo}>
+                  <span className={styles.mobileDayItemBadge} style={{ color, background: `${color}18` }}>
+                    {TYPE_LABELS[ev.type]}
+                  </span>
+                  <span className={styles.mobileDayItemTitle}>{ev.title}</span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+        <button className={styles.mobileDayAddBtn} onClick={() => onNewEvent(date)}>
+          <Plus size={15} /> Novo Compromisso
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Page ──────────────────────────────────────────────
 export default function Agenda() {
   const today = new Date();
@@ -521,6 +570,7 @@ export default function Agenda() {
   const [clickDate, setClickDate] = useState('');
   const [formSaving, setFormSaving] = useState(false);
   const [formError, setFormError] = useState('');
+  const [mobileDayModal, setMobileDayModal] = useState<{ date: string; events: Appointment[] } | null>(null);
 
   // Google Calendar
   const [searchParams, setSearchParams] = useSearchParams();
@@ -747,7 +797,16 @@ export default function Agenda() {
                 <div
                   key={i}
                   className={`${styles.calCell} ${isToday ? styles.calCellToday : ''} ${!isValid ? styles.calCellEmpty : ''}`}
-                  onClick={() => { if (isValid) { setClickDate(ymd); setFormError(''); setModal('novo'); } }}
+                  onClick={() => {
+                    if (!isValid) return;
+                    if (events.length > 0 && window.innerWidth <= 480) {
+                      setMobileDayModal({ date: ymd, events });
+                    } else {
+                      setClickDate(ymd);
+                      setFormError('');
+                      setModal('novo');
+                    }
+                  }}
                 >
                   {isValid && (
                     <span className={`${styles.dayNum} ${isToday ? styles.dayNumToday : ''}`}>{dayNum}</span>
@@ -771,6 +830,14 @@ export default function Agenda() {
                       </div>
                     );
                   })}
+                  {events.length > 0 && (
+                    <div className={styles.eventDots}>
+                      {events.slice(0, 4).map(ev => (
+                        <span key={`dot-${ev.id}`} className={styles.eventDot} style={{ background: TYPE_COLOR[ev.type] }} />
+                      ))}
+                      {events.length > 4 && <span className={styles.eventDotExtra}>+{events.length - 4}</span>}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -819,6 +886,16 @@ export default function Agenda() {
         <CalcModal
           onClose={() => setModal(null)}
           onAppointmentCreated={a => setAppointments(prev => [...prev, a])}
+        />
+      )}
+
+      {mobileDayModal && (
+        <MobileDayModal
+          date={mobileDayModal.date}
+          events={mobileDayModal.events}
+          onClose={() => setMobileDayModal(null)}
+          onSelectEvent={ev => { setMobileDayModal(null); setSelected(ev); setModal('detalhes'); }}
+          onNewEvent={date => { setMobileDayModal(null); setClickDate(date); setFormError(''); setModal('novo'); }}
         />
       )}
     </div>
