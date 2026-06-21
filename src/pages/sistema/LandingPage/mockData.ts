@@ -6,7 +6,9 @@ export const mockLandingPage: LandingPageData = {
   telefone: '(11) 3456-7890',
 
   linkedin:  'www.linkedin.com/in/nome',
-  instagram: 'www.instagram/nome',
+  instagram: 'www.instagram.com/nome',
+  whatsapp:  'https://wa.me/5511000000000',
+  website:   'https://vitorfranca.adv.br',
 
   heroTitulo:   'Soluções jurídicas para empresas que querem crescer com segurança',
   heroSubtexto: 'Assessoria jurídica especializada com foco em resultados práticos e estratégias personalizadas para o seu negócio.',

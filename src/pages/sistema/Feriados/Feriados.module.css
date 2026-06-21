@@ -1,6 +1,5 @@
 .page { padding: 0; }
 
-/* Header */
 .pageHeader {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 32px;
@@ -11,8 +10,6 @@
   font-size: 2rem; font-weight: 700; color: var(--navy);
 }
 
-.headerActions { display: flex; gap: 12px; align-items: center; }
-
 .btnPrimary {
   display: flex; align-items: center; gap: 8px;
   background: var(--navy); color: var(--white);
@@ -21,14 +18,7 @@
   font-family: var(--font-body); transition: background .2s;
 }
 .btnPrimary:hover { background: var(--navy-mid); }
-
-.btnSecondary {
-  background: var(--white); color: var(--navy);
-  border: 1.5px solid #e0e0e0; padding: 10px 20px; border-radius: 8px;
-  font-size: .9rem; font-weight: 600; cursor: pointer;
-  font-family: var(--font-body); transition: background .2s;
-}
-.btnSecondary:hover { background: #f5f5f5; }
+.btnPrimary:disabled { opacity: .6; cursor: default; }
 
 .btnBack {
   display: flex; align-items: center; gap: 8px;
@@ -38,73 +28,13 @@
 }
 .btnBack:hover { opacity: .7; }
 
-/* Table */
-.tableWrap {
-  background: var(--white);
-  border-radius: 12px;
-  overflow-x: auto;
-  box-shadow: 0 1px 4px rgba(0,0,0,.06);
-}
-
-.table { width: 100%; min-width: 600px; border-collapse: collapse; }
-
-.table thead tr {
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.table th {
-  padding: 14px 20px;
-  text-align: left;
-  font-size: .72rem; font-weight: 700;
-  letter-spacing: .1em; text-transform: uppercase;
-  color: var(--gray);
-}
-
-.table tbody tr {
-  border-bottom: 1px solid #f5f5f5;
-  transition: background .15s;
-}
-.table tbody tr:last-child { border-bottom: none; }
-.table tbody tr:hover { background: #fafafa; }
-
-.table td { padding: 16px 20px; vertical-align: top; }
-
-.userName { font-weight: 700; color: var(--navy); font-size: .95rem; margin-bottom: 4px; }
-.userSub  { font-size: .8rem; color: var(--gray); line-height: 1.5; }
-
-.email { color: var(--gray); font-size: .9rem; vertical-align: middle !important; }
-
-.badges { display: flex; flex-direction: column; gap: 6px; }
-
-.cargoBadge {
-  display: inline-block;
-  padding: 3px 10px; border-radius: 20px;
-  font-size: .72rem; font-weight: 700; letter-spacing: .06em;
-  width: fit-content;
-}
-
-.date    { font-size: .9rem; color: var(--text); font-weight: 500; }
-.dateSub { font-size: .78rem; color: var(--gray); margin-top: 2px; }
-
-.acoes { display: flex; gap: 12px; align-items: center; }
-
-.iconBtn {
-  background: none; border: none; cursor: pointer;
-  color: var(--gray); display: flex; align-items: center;
-  padding: 4px; border-radius: 4px; transition: color .2s;
-}
-.iconBtn:hover { color: var(--navy); }
-.iconBtn.danger:hover { color: var(--crimson); }
-
 /* Filters */
 .filterBar {
   display: flex; align-items: center; gap: 12px;
   flex-wrap: wrap; margin-bottom: 24px;
 }
 
-.filterDateGroup {
-  display: flex; align-items: center; gap: 8px;
-}
+.filterDateGroup { display: flex; align-items: center; gap: 8px; }
 
 .filterLabel {
   font-size: .82rem; font-weight: 600; color: var(--gray);
@@ -116,39 +46,54 @@
   border: 1.5px solid #e0e0e0; border-radius: 8px;
   font-family: var(--font-body); font-size: .85rem;
   color: var(--text); background: var(--white);
-  outline: none; cursor: pointer; transition: border-color .2s;
+  outline: none; transition: border-color .2s;
 }
 .filterInput:focus { border-color: var(--navy); }
 
-/* Logs */
-.logList { display: flex; flex-direction: column; gap: 0; }
-
-.logItem {
-  display: flex; align-items: center; gap: 24px;
-  padding: 20px 0;
-  border-bottom: 1px solid #f0f0f0;
-}
-.logItem:last-child { border-bottom: none; }
-
-.logDate { min-width: 80px; }
-.logDay  { display: block; font-weight: 700; color: var(--navy); font-size: .9rem; }
-.logHour { display: block; color: var(--gray); font-size: .82rem; margin-top: 2px; }
-
-.logDivider { width: 3px; height: 48px; background: var(--crimson); border-radius: 2px; flex-shrink: 0; }
-
-.logContent { flex: 1; }
-.logDesc    { font-weight: 600; color: var(--navy); font-size: .9rem; margin-bottom: 4px; }
-.logSub     { font-size: .82rem; color: var(--gray); }
-
-.logBadge {
-  color: var(--white); font-size: .72rem; font-weight: 700;
-  letter-spacing: .08em; padding: 5px 12px; border-radius: 20px;
-  flex-shrink: 0;
+/* Table */
+.tableWrap {
+  background: var(--white);
+  border-radius: 12px;
+  overflow-x: auto;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
 }
 
-.logExecutor { min-width: 120px; text-align: right; }
-.logExecutorLabel { display: block; font-size: .72rem; font-weight: 700; letter-spacing: .08em; color: var(--gray); text-transform: uppercase; margin-bottom: 4px; }
-.logExecutorName  { font-size: .88rem; color: var(--navy); font-weight: 500; }
+.table { width: 100%; min-width: 640px; border-collapse: collapse; }
+
+.table thead tr { border-bottom: 1px solid #f0f0f0; }
+
+.table th {
+  padding: 14px 20px; text-align: left;
+  font-size: .72rem; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--gray);
+}
+
+.table tbody tr {
+  border-bottom: 1px solid #f5f5f5; transition: background .15s;
+}
+.table tbody tr:last-child { border-bottom: none; }
+.table tbody tr:hover { background: #fafafa; }
+.table td { padding: 16px 20px; vertical-align: middle; }
+
+.dateCell { font-weight: 600; color: var(--navy); font-size: .9rem; white-space: nowrap; }
+.descCell { color: var(--text); font-size: .9rem; }
+.subCell  { color: var(--gray); font-size: .88rem; }
+
+.badge {
+  display: inline-block;
+  padding: 3px 10px; border-radius: 20px;
+  font-size: .72rem; font-weight: 700; letter-spacing: .06em;
+}
+
+.acoes { display: flex; gap: 12px; align-items: center; }
+
+.iconBtn {
+  background: none; border: none; cursor: pointer;
+  color: var(--gray); display: flex; align-items: center;
+  padding: 4px; border-radius: 4px; transition: color .2s;
+}
+.iconBtn:hover { color: var(--navy); }
+.iconBtn.danger:hover { color: var(--crimson); }
 
 /* Pagination */
 .pagination {
@@ -157,7 +102,6 @@
 }
 
 .pageInfo strong { color: var(--navy); }
-
 .pageControls { display: flex; align-items: center; gap: 4px; }
 
 .pageArrow {
@@ -195,24 +139,10 @@
   border: 1.5px solid #e0e0e0; border-radius: 8px;
   font-family: var(--font-body); font-size: .9rem;
   color: var(--text); outline: none; transition: border-color .2s;
+  background: var(--white);
 }
 .fieldInput:focus { border-color: var(--navy); }
 .fieldInput::placeholder { color: #bbb; }
-
-.fieldReadonly {
-  width: 100%; padding: 10px 14px;
-  border: 1.5px solid #e0e0e0; border-radius: 8px;
-  font-size: .9rem; color: var(--text);
-  background: #fafafa;
-}
-
-.infoBox {
-  display: flex; gap: 10px; align-items: flex-start;
-  background: #e8eaf6; border-radius: 8px;
-  padding: 14px 16px; margin: 16px 0;
-  font-size: .85rem; color: var(--navy); line-height: 1.5;
-}
-.infoIcon { flex-shrink: 0; margin-top: 1px; color: var(--navy); }
 
 .modalFooter {
   display: flex; justify-content: flex-end; gap: 12px;
@@ -235,35 +165,26 @@
   font-family: var(--font-body); transition: background .2s;
 }
 .btnDanger:hover { background: var(--crimson-light); }
+.btnDanger:disabled { opacity: .6; cursor: default; }
 
 .deleteText {
-  color: var(--gray); line-height: 1.7; font-size: .95rem;
-  margin-bottom: 8px;
+  color: var(--gray); line-height: 1.7; font-size: .95rem; margin-bottom: 8px;
 }
 .deleteText strong { color: var(--navy); }
 
-@media (max-width: 650px) {
-  .pageHeader { flex-direction: column; align-items: flex-start; gap: 12px; }
-  .headerActions { flex-wrap: wrap; }
-  .fieldRow { grid-template-columns: 1fr; }
-  .logItem { flex-direction: column; align-items: flex-start; gap: 6px; padding: 14px 0; }
-  .logDivider { display: none; }
-  .logExecutor { min-width: unset; text-align: left; }
-  .logBadge { align-self: flex-start; }
-  .pagination { flex-direction: column; align-items: flex-start; gap: 12px; }
-  .filterBar { flex-direction: column; align-items: flex-start; }
-  .filterInput { width: 100%; box-sizing: border-box; }
-  .filterDateGroup { width: 100%; }
-}
-
-/* Status messages */
-.statusMsg {
-  padding: 24px 0;
-  color: var(--gray); font-size: .9rem; text-align: center;
-}
-
+/* Status */
+.statusMsg { padding: 24px 0; color: var(--gray); font-size: .9rem; text-align: center; }
 .errorMsg {
   padding: 10px 14px; margin: 8px 0;
   background: #fce4ec; color: var(--crimson);
   border-radius: 8px; font-size: .85rem;
+}
+
+@media (max-width: 650px) {
+  .pageHeader { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .fieldRow { grid-template-columns: 1fr; }
+  .pagination { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .filterBar { flex-direction: column; align-items: flex-start; }
+  .filterInput { width: 100%; box-sizing: border-box; }
+  .filterDateGroup { width: 100%; }
 }

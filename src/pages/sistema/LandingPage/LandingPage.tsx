@@ -3,6 +3,7 @@ import {
   Building2, Link2, Star, BookOpen, UserRound,
   Shield, MapPin, ImageIcon, Pencil, Check, X, Loader2,
 } from 'lucide-react';
+import { ApiError } from '../../../services/api';
 import { getOfficeConfigUI, updateOfficeConfig, uploadMedia } from '../../../services/officeConfigService';
 import type { LandingPageData, Diferencial, AreaAtuacao } from './types';
 import ImagePositionModal from '../../../components/sistema/shared/ImagePositionModal';
@@ -24,7 +25,7 @@ const EMPTY_AREAS: AreaAtuacao[] = [
 
 const EMPTY_DATA: LandingPageData = {
   email: '', endereco: '', telefone: '',
-  linkedin: '', instagram: '',
+  linkedin: '', instagram: '', whatsapp: '', website: '',
   heroTitulo: '', heroSubtexto: '', heroImagem: '', heroImagemPos: { x: 50, y: 50 },
   escritorioTitulo: '', escritorioConteudo: '', escritorioImagem: '', escritorioImagemPos: { x: 50, y: 50 },
   advogadoTitulo: '', advogadoOab: '', advogadoConteudo: '', advogadoImagem: '', advogadoImagemPos: { x: 50, y: 50 },
@@ -154,6 +155,7 @@ export default function LandingPageConfig() {
   const [saved,   setSaved]   = useState<LandingPageData>(EMPTY_DATA);
   const [data,    setData]    = useState<LandingPageData>(EMPTY_DATA);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [saving,  setSaving]  = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const isDirty = !deepEqual(data, saved);
@@ -169,7 +171,7 @@ export default function LandingPageConfig() {
         setSaved(merged);
         setData(merged);
       })
-      .catch(() => {})
+      .catch(() => { setLoadError('Não foi possível carregar as configurações. Recarregue a página.'); })
       .finally(() => setLoading(false));
   }, []);
 
@@ -186,8 +188,10 @@ export default function LandingPageConfig() {
       const updated = await updateOfficeConfig(data);
       setSaved(updated);
       setData(updated);
-    } catch {
-      setSaveError('Erro ao salvar. Verifique sua conexão e tente novamente.');
+    } catch (err) {
+      setSaveError(
+        err instanceof ApiError ? err.message : 'Erro ao salvar. Verifique sua conexão e tente novamente.',
+      );
     } finally {
       setSaving(false);
     }
@@ -207,6 +211,14 @@ export default function LandingPageConfig() {
     return (
       <div className={styles.page} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300 }}>
         <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', color: '#666' }} />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className={styles.page}>
+        <p style={{ color: '#c0392b', fontSize: '0.95rem' }}>{loadError}</p>
       </div>
     );
   }
@@ -234,12 +246,24 @@ export default function LandingPageConfig() {
 
       {/* ── Links ── */}
       <SectionCard icon={<Link2 size={20} />} title="Links">
-        <Field label="LINKEDIN">
-          <input className={styles.input} value={data.linkedin} onChange={e => set('linkedin', e.target.value)} />
-        </Field>
-        <Field label="INSTAGRAM">
-          <input className={styles.input} value={data.instagram} onChange={e => set('instagram', e.target.value)} />
-        </Field>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div className={styles.row2}>
+          <Field label="LINKEDIN DO ADVOGADO">
+            <input className={styles.input} value={data.linkedin} onChange={e => set('linkedin', e.target.value)} />
+          </Field>
+          <Field label="INSTAGRAM DO ADVOGADO">
+            <input className={styles.input} value={data.instagram} onChange={e => set('instagram', e.target.value)} />
+          </Field>
+        </div>
+        <div className={styles.row2}>
+          <Field label="WHATSAPP">
+            <input className={styles.input} value={data.whatsapp} onChange={e => set('whatsapp', e.target.value)} />
+          </Field>
+          <Field label="SITE DO ESCRITÓRIO">
+            <input className={styles.input} value={data.website} onChange={e => set('website', e.target.value)} />
+          </Field>
+        </div>
+        </div>
       </SectionCard>
 
       {/* ── Hero ── */}
@@ -373,7 +397,7 @@ export default function LandingPageConfig() {
       {/* ── Bottom bar ── */}
       <div className={`${styles.bottomBar} ${isDirty || saveError ? styles.bottomBarVisible : ''}`}>
         {saveError && (
-          <span style={{ color: '#e74c3c', fontSize: 13, marginRight: 'auto' }}>{saveError}</span>
+          <span className={styles.bottomError}>{saveError}</span>
         )}
         {!saveError && (
           <span className={styles.bottomMsg}>

@@ -13,6 +13,7 @@ import {
   type GoogleStatus,
 } from '../../../services/googleCalendar';
 import { calculateDeadline } from '../../../services/deadlines';
+import { listForensicHolidays, type ForensicHoliday } from '../../../services/forensicHolidays';
 import { listClients, type ClientListItem } from '../../../services/clients';
 import { listProcesses, type ProcessListItem } from '../../../services/processes';
 import { ApiError } from '../../../services/api';
@@ -504,6 +505,55 @@ function CalcModal({ onClose, onAppointmentCreated }: CalcModalProps) {
   );
 }
 
+// ── MobileDayModal ─────────────────────────────────────────
+interface MobileDayModalProps {
+  date: string;
+  events: Appointment[];
+  onClose: () => void;
+  onSelectEvent: (ev: Appointment) => void;
+  onNewEvent: (date: string) => void;
+}
+
+function MobileDayModal({ date, events, onClose, onSelectEvent, onNewEvent }: MobileDayModalProps) {
+  const dateFmt = new Date(date + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
+  return (
+    <div className={styles.overlayBottom} onClick={onClose}>
+      <div className={styles.mobileDaySheet} onClick={e => e.stopPropagation()}>
+        <div className={styles.mobileDayHandle} />
+        <div className={styles.mobileDayHeader}>
+          <span className={styles.mobileDayDate}>{dateFmt}</span>
+          <button className={styles.mobileDayClose} onClick={onClose}><X size={18} /></button>
+        </div>
+        <div className={styles.mobileDayList}>
+          {events.map(ev => {
+            const color = TYPE_COLOR[ev.type];
+            const { time } = fromStartsAt(ev.starts_at);
+            return (
+              <button
+                key={ev.id}
+                className={styles.mobileDayItem}
+                style={{ borderLeft: `3px solid ${color}` }}
+                onClick={() => onSelectEvent(ev)}
+              >
+                <span className={styles.mobileDayItemTime}>{time}</span>
+                <div className={styles.mobileDayItemInfo}>
+                  <span className={styles.mobileDayItemBadge} style={{ color, background: `${color}18` }}>
+                    {TYPE_LABELS[ev.type]}
+                  </span>
+                  <span className={styles.mobileDayItemTitle}>{ev.title}</span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+        <button className={styles.mobileDayAddBtn} onClick={() => onNewEvent(date)}>
+          <Plus size={15} /> Novo Compromisso
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Page ──────────────────────────────────────────────
 export default function Agenda() {
   const today = new Date();
@@ -511,6 +561,7 @@ export default function Agenda() {
   const [month, setMonth] = useState(today.getMonth());
 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [holidays, setHolidays] = useState<ForensicHoliday[]>([]);
   const [clients, setClients] = useState<ClientListItem[]>([]);
   const [processes, setProcesses] = useState<ProcessListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -521,6 +572,7 @@ export default function Agenda() {
   const [clickDate, setClickDate] = useState('');
   const [formSaving, setFormSaving] = useState(false);
   const [formError, setFormError] = useState('');
+  const [mobileDayModal, setMobileDayModal] = useState<{ date: string; events: Appointment[] } | null>(null);
 
   // Google Calendar
   const [searchParams, setSearchParams] = useSearchParams();
@@ -591,17 +643,19 @@ export default function Agenda() {
     setLoading(true);
     setPageError('');
     try {
-      const [apptRes, clientRes, procRes] = await Promise.all([
+      const [apptRes, clientRes, procRes, holidayRes] = await Promise.all([
         listAppointments({
           date_from: `${y}-01-01T00:00:00Z`,
           date_to: `${y}-12-31T23:59:59Z`,
         }),
         listClients({ limit: 100 }),
         listProcesses({ limit: 100 }),
+        listForensicHolidays({ year: y, limit: 500 }),
       ]);
       setAppointments(apptRes.data);
       setClients(clientRes.data);
       setProcesses(procRes.data);
+      setHolidays(holidayRes.data);
     } catch {
       setPageError('Não foi possível carregar a agenda.');
     } finally {
@@ -742,17 +796,34 @@ export default function Agenda() {
               const events = isValid
                 ? appointments.filter(a => fromStartsAt(a.starts_at).date === ymd)
                 : [];
+              const dayHolidays = isValid
+                ? holidays.filter(h => h.date === ymd)
+                : [];
 
               return (
                 <div
                   key={i}
                   className={`${styles.calCell} ${isToday ? styles.calCellToday : ''} ${!isValid ? styles.calCellEmpty : ''}`}
-                  onClick={() => { if (isValid) { setClickDate(ymd); setFormError(''); setModal('novo'); } }}
+                  onClick={() => {
+                    if (!isValid) return;
+                    if (events.length > 0 && window.innerWidth <= 480) {
+                      setMobileDayModal({ date: ymd, events });
+                    } else {
+                      setClickDate(ymd);
+                      setFormError('');
+                      setModal('novo');
+                    }
+                  }}
                 >
                   {isValid && (
                     <span className={`${styles.dayNum} ${isToday ? styles.dayNumToday : ''}`}>{dayNum}</span>
                   )}
-                  {events.map(ev => {
+                  {dayHolidays.map(h => (
+                    <div key={`holiday-${h.id}`} className={styles.holidayChip} title={h.description}>
+                      {h.description}
+                    </div>
+                  ))}
+                  {events.slice(0, 3).map(ev => {
                     const color = TYPE_COLOR[ev.type];
                     const isPrazo = ev.type === 'PRAZO';
                     const { time } = fromStartsAt(ev.starts_at);
@@ -771,6 +842,22 @@ export default function Agenda() {
                       </div>
                     );
                   })}
+                  {events.length > 3 && (
+                    <div className={styles.eventOverflow}>+{events.length - 3} mais</div>
+                  )}
+                  {(events.length > 0 || dayHolidays.length > 0) && (
+                    <div className={styles.eventDots}>
+                      {[
+                        ...dayHolidays.map(h  => ({ key: `hdot-${h.id}`,  color: '#f9a825' })),
+                        ...events.map(ev => ({ key: `dot-${ev.id}`, color: TYPE_COLOR[ev.type] })),
+                      ].slice(0, 4).map(dot => (
+                        <span key={dot.key} className={styles.eventDot} style={{ background: dot.color }} />
+                      ))}
+                      {(events.length + dayHolidays.length) > 4 && (
+                        <span className={styles.eventDotExtra}>+{events.length + dayHolidays.length - 4}</span>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -819,6 +906,16 @@ export default function Agenda() {
         <CalcModal
           onClose={() => setModal(null)}
           onAppointmentCreated={a => setAppointments(prev => [...prev, a])}
+        />
+      )}
+
+      {mobileDayModal && (
+        <MobileDayModal
+          date={mobileDayModal.date}
+          events={mobileDayModal.events}
+          onClose={() => setMobileDayModal(null)}
+          onSelectEvent={ev => { setMobileDayModal(null); setSelected(ev); setModal('detalhes'); }}
+          onNewEvent={date => { setMobileDayModal(null); setClickDate(date); setFormError(''); setModal('novo'); }}
         />
       )}
     </div>

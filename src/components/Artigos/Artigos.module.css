@@ -1,6 +1,10 @@
 .section { background: var(--navy); padding: 100px 0; }
 
-.inner { padding: 0 120px; }
+.inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 var(--px);
+}
 
 .header { margin-bottom: 48px; }
 
@@ -142,4 +146,6 @@
   .inner { padding: 0 24px; }
   .grid { grid-template-columns: 1fr; }
   .sideArrow { display: none; }
+  .carouselRow { margin: 0; }
+  .skeletonRow { grid-template-columns: 1fr; }
 }

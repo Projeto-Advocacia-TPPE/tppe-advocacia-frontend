@@ -1,11 +1,22 @@
-export function LeadForm({
-  formData,
-  isSubmitting,
-  kind,
-  message,
-  onChange,
-  onSubmit,
-}) {
+import type { ChangeEvent, FormEvent } from 'react';
+
+export type LeadFormData = {
+  name: string;
+  email: string;
+  phone: string;
+  message: string;
+};
+
+type Props = {
+  formData: LeadFormData;
+  isSubmitting: boolean;
+  kind?: 'success' | 'error';
+  message?: string;
+  onChange: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  onSubmit: (e: FormEvent<HTMLFormElement>) => void;
+};
+
+export function LeadForm({ formData, isSubmitting, kind, message, onChange, onSubmit }: Props) {
   return (
     <form className="lead-form" onSubmit={onSubmit}>
       <label>
@@ -47,7 +58,7 @@ export function LeadForm({
         Mensagem
         <textarea
           name="message"
-          rows="4"
+          rows={4}
           value={formData.message}
           onChange={onChange}
           placeholder="Descreva rapidamente o interesse do lead"
@@ -55,7 +66,7 @@ export function LeadForm({
       </label>
 
       <button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Enviando..." : "Enviar lead"}
+        {isSubmitting ? 'Enviando...' : 'Enviar lead'}
       </button>
 
       {message && <p className={`form-feedback is-${kind}`}>{message}</p>}

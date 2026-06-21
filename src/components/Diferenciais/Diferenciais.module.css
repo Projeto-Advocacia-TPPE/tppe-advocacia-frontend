@@ -4,7 +4,9 @@
 }
 
 .inner {
-  padding: 0 120px;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 var(--px);
 }
 
 .heading {
@@ -18,11 +20,13 @@
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 360px));
+  justify-content: space-between;
   gap: 48px;
+  width: 100%;
 }
 
-.card { opacity: 0; max-width: 280px; }
+.card { opacity: 0; }
 
 .cardTitle {
   font-family: var(--font-display);

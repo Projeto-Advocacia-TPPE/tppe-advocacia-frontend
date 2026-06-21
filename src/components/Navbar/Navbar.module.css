@@ -5,10 +5,14 @@
   z-index: 100;
   height: 110px;
   background: var(--navy);
+}
+
+.inner {
+  padding: 0 var(--px);
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 48px;
 }
 
 .logo {
@@ -136,8 +140,11 @@
 .drawerBtn:hover { background: var(--crimson-light); }
 
 @media (max-width: 900px) {
+  .nav        { height: 72px; }
   .links      { display: none; }
   .btnAgendar { display: none; }
   .hamburger  { display: flex; }
-  .drawer     { display: block; }
+  .drawer     { display: block; top: 72px; padding: 24px 24px 32px; }
+  .logo       { width: min(160px, 50%); height: auto; }
+  .logoImg    { max-width: 100%; height: auto; }
 }

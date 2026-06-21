@@ -14,6 +14,7 @@ export interface OfficeConfigAPI {
   instagram_url: string | null;
   linkedin_url: string | null;
   whatsapp_url: string | null;
+  website_url: string | null;
   hero_title: string | null;
   hero_subtitle: string | null;
   hero_image_url: string | null;
@@ -44,6 +45,8 @@ function apiToUI(api: OfficeConfigAPI): LandingPageData {
     telefone: api.phone ?? '',
     linkedin: api.linkedin_url ?? '',
     instagram: api.instagram_url ?? '',
+    whatsapp: api.whatsapp_url ?? '',
+    website: api.website_url ?? '',
     heroTitulo: api.hero_title ?? '',
     heroSubtexto: api.hero_subtitle ?? '',
     heroImagem: api.hero_image_url ?? '',
@@ -70,13 +73,15 @@ function apiToUI(api: OfficeConfigAPI): LandingPageData {
   };
 }
 
-function uiToApi(ui: LandingPageData): Omit<OfficeConfigAPI, 'id' | 'cnpj' | 'whatsapp_url' | 'office_name'> {
+function uiToApi(ui: LandingPageData): Omit<OfficeConfigAPI, 'id' | 'cnpj' | 'office_name'> {
   return {
     email: ui.email || null,
     address: ui.endereco || null,
     phone: ui.telefone || null,
     linkedin_url: ui.linkedin || null,
     instagram_url: ui.instagram || null,
+    whatsapp_url: ui.whatsapp || null,
+    website_url: ui.website || null,
     hero_title: ui.heroTitulo || null,
     hero_subtitle: ui.heroSubtexto || null,
     hero_image_url: ui.heroImagem || null,

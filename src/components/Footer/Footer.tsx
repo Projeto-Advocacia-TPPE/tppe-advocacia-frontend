@@ -15,6 +15,8 @@ export default function Footer() {
 
   const linkedinUrl  = config?.linkedin_url  ?? '#';
   const instagramUrl = config?.instagram_url ?? '#';
+  const whatsappUrl  = config?.whatsapp_url  ?? '#';
+  const websiteUrl   = config?.website_url   ?? '#';
   const oab          = config?.lawyer_oab    ?? 'OAB/SP 123.456';
 
   return (

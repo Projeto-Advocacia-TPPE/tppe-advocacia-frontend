@@ -14,6 +14,7 @@
   border-radius: 12px;
   overflow: hidden;
   max-height: 90vh;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
   box-shadow: 0 20px 60px rgba(0,0,0,.25);
@@ -53,4 +54,9 @@
   padding: 28px 28px 24px;
   overflow-y: auto;
   flex: 1;
+}
+
+@media (max-width: 480px) {
+  .header { padding: 14px 16px; }
+  .body { padding: 16px 16px 14px; }
 }

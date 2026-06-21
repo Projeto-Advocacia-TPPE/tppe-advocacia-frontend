@@ -11,6 +11,7 @@ export default function Escritorio() {
   const description = config?.about_description ?? 'O escritório nasceu com o propósito de oferecer soluções jurídicas personalizadas e estratégicas para empresas que buscam crescimento sustentável.';
   const imgUrl      = config?.about_image_url   ?? '/placeholder.png';
   const imgPos      = config?.about_image_position ? config.about_image_position.split(',').map(v => `${v}%`).join(' ') : '50% 50%';
+  const websiteUrl  = config?.website_url       ?? '#';
 
   return (
     <section id="escritorio" className={styles.section}>
@@ -25,7 +26,7 @@ export default function Escritorio() {
             <div className={styles.divider} />
             <h2 className={styles.title}>{title}</h2>
             <p className={styles.body}>{description}</p>
-            <a href="#sobre" className={styles.linkSaiba}>Saiba Mais →</a>
+            <a href={websiteUrl} className={styles.linkSaiba} target="_blank" rel="noopener noreferrer">Saiba Mais →</a>
           </div>
         </div>
       </div>

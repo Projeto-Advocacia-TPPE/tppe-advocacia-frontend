@@ -54,6 +54,7 @@ export default function CriarArtigo({ onVoltar, onSalvar, onAutoSalvar, inicial,
   const [wordCount, setWordCount]       = useState(0);
   const [preview, setPreview]           = useState(false);
   const [autoSaveMsg, setAutoSaveMsg]   = useState<'saving' | 'saved' | null>(null);
+  const [capaError, setCapaError]       = useState('');
 
   // conteudo em ref para sempre ter o valor mais recente sem problema de closure
   const conteudoRef = useRef<string>(inicial?.conteudo ?? '');
@@ -121,13 +122,12 @@ export default function CriarArtigo({ onVoltar, onSalvar, onAutoSalvar, inicial,
   async function handleCapaChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    setCapaError('');
     try {
       const url = await uploadMedia(file);
       setCapa(url);
-      // Aqui, o ideal é o useEffect rodar o scheduleAutoSave, pois o estado de "capa" 
-      // é atualizado de forma assíncrona. Adicionei a dependência abaixo no useEffect.
     } catch {
-      // silently keep existing capa
+      setCapaError('Não foi possível fazer upload da imagem. Tente novamente.');
     }
   }
 
@@ -333,6 +333,10 @@ export default function CriarArtigo({ onVoltar, onSalvar, onAutoSalvar, inicial,
             />
           )}
         </>
+      )}
+
+      {capaError && (
+        <p style={{ color: '#c0392b', fontSize: '.88rem', margin: '4px 0 12px' }}>{capaError}</p>
       )}
 
       {/* ── Editor ── */}

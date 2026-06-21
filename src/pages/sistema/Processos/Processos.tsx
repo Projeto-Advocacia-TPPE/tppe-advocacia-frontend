@@ -561,8 +561,12 @@ function ProcessDetailsModal({
   async function handleDeadlineChanged(message: string) {
     setDeadlineEditor(null);
     setFeedback({ message, kind: 'success' });
-    const response = await listProcessDeadlines(processId);
-    setDeadlines(response.data);
+    try {
+      const response = await listProcessDeadlines(processId);
+      setDeadlines(response.data);
+    } catch (requestError) {
+      setFeedback({ message: errorMessage(requestError), kind: 'error' });
+    }
     onChanged(message);
   }
 

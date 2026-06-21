@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 
 function ScrollToHash() {
   const { hash } = useLocation();
@@ -50,6 +51,7 @@ import Processos from './pages/sistema/Processos/Processos';
 import Tarefas from './pages/sistema/Tarefas';
 import Artigos_ from './pages/sistema/Artigos_/Artigos';
 import LogsAPI from './pages/sistema/LogsAPI/LogsAPI';
+import Feriados from './pages/sistema/Feriados/Feriados';
 
 function LandingPage() {
   return (
@@ -81,6 +83,7 @@ function GoogleCalendarRedirect() {
 
 export default function App() {
   return (
+    <>
     <BrowserRouter>
       <ScrollToHash />
       <Routes>
@@ -112,9 +115,14 @@ export default function App() {
             <Route element={<AdminRoute />}>
               <Route path="logs-api" element={<LogsAPI />} />
             </Route>
+            <Route element={<AdminRoute />}>
+              <Route path="feriados" element={<Feriados />} />
+            </Route>
           </Route>
         </Route>
       </Routes>
     </BrowserRouter>
+    <Analytics />
+    </>
   );
 }

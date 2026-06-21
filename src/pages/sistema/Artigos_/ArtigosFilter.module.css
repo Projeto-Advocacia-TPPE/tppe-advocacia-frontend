@@ -118,3 +118,13 @@
   margin: -4px 0 8px;
   padding: 0 2px;
 }
+
+@media (max-width: 650px) {
+  .filterBar { flex-direction: column; align-items: stretch; gap: 8px; }
+  .filterField { min-width: unset; }
+  .filterInput { width: 100%; box-sizing: border-box; }
+  .filterSelect { min-width: unset; width: 100%; box-sizing: border-box; }
+  .filterDateWrap { justify-content: space-between; }
+  .filterDate { flex: 1; }
+  .filterClear { align-self: flex-start; }
+}
