@@ -42,7 +42,7 @@ export async function listAppointments(params: {
 } = {}): Promise<PaginatedResponse<Appointment>> {
   const query = new URLSearchParams({
     page: String(params.page ?? 1),
-    limit: String(params.limit ?? 200),
+    limit: String(params.limit ?? 100),
   });
   if (params.date_from) query.set('date_from', params.date_from);
   if (params.date_to) query.set('date_to', params.date_to);

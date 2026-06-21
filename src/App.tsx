@@ -69,13 +69,23 @@ function LandingPage() {
   );
 }
 
+function GoogleCalendarRedirect() {
+  const { search } = useLocation();
+  const params = new URLSearchParams(search);
+  const gcal = params.get('google_calendar');
+  if (gcal === 'connected' || gcal === 'error') {
+    return <Navigate to={`/sistema/agenda?google_calendar=${gcal}`} replace />;
+  }
+  return null;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
       <ScrollToHash />
       <Routes>
         {/* Landing page pública */}
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<><GoogleCalendarRedirect /><LandingPage /></>} />
         <Route path="/artigos/:id" element={<ArtigoPage />} />
 
         {/* Auth */}

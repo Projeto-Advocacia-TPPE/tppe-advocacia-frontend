@@ -231,3 +231,49 @@
 .calLoading { padding: 60px; text-align: center; color: var(--gray); font-size: .9rem; }
 .calcSkipNote { font-size: .75rem; color: rgba(255,255,255,.5); margin-top: 8px; line-height: 1.4; }
 .calcError { font-size: .8rem; color: #fca5a5; margin-top: 8px; line-height: 1.4; }
+
+/* ── Google Calendar Banner ── */
+.gcalBanner {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap;
+  border-radius: 10px; padding: 12px 16px; margin-bottom: 16px;
+}
+.gcalConnected    { background: #e8f5e9; border: 1.5px solid #a5d6a7; }
+.gcalDisconnected { background: #f5f5f5; border: 1.5px solid #e0e0e0; }
+
+.gcalLeft { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+.gcalIcon { color: #1a73e8; flex-shrink: 0; }
+.gcalText { font-size: .85rem; color: var(--text); line-height: 1.4; }
+
+.gcalActions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.gcalOk  { font-size: .82rem; color: #2e7d32; font-weight: 500; }
+.gcalErr { font-size: .82rem; color: #c62828; font-weight: 500; }
+
+.gcalBtnPrimary {
+  background: #1a73e8; color: var(--white);
+  border: none; padding: 8px 16px; border-radius: 7px;
+  font-size: .84rem; font-weight: 600; cursor: pointer;
+  font-family: var(--font-body); white-space: nowrap;
+  transition: background .2s;
+}
+.gcalBtnPrimary:hover:not(:disabled) { background: #1557b0; }
+.gcalBtnPrimary:disabled { opacity: .6; cursor: default; }
+
+.gcalBtnSecondary {
+  background: var(--white); color: var(--navy);
+  border: 1.5px solid #c0c0c0; padding: 7px 14px; border-radius: 7px;
+  font-size: .84rem; font-weight: 600; cursor: pointer;
+  font-family: var(--font-body); white-space: nowrap;
+  transition: background .2s;
+}
+.gcalBtnSecondary:hover:not(:disabled) { background: #f5f5f5; }
+.gcalBtnSecondary:disabled { opacity: .6; cursor: default; }
+
+.gcalBtnDanger {
+  background: none; color: #c62828;
+  border: none; padding: 7px 4px; border-radius: 7px;
+  font-size: .84rem; font-weight: 600; cursor: pointer;
+  font-family: var(--font-body); white-space: nowrap;
+}
+.gcalBtnDanger:hover:not(:disabled) { text-decoration: underline; }
+.gcalBtnDanger:disabled { opacity: .6; cursor: default; }
