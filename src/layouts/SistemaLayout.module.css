@@ -7,6 +7,7 @@
 .main {
   margin-left: 260px;
   flex: 1;
+  min-width: 0;
   padding: 40px;
   transition: margin-left 0.3s ease;
 }

@@ -144,4 +144,7 @@
   .btnAgendar { display: none; }
   .hamburger  { display: flex; }
   .drawer     { display: block; }
+  .logo { width: min(180px, 55%); height: auto; }
+  .logoImg { max-width: 100%; height: auto; }
+  .drawer { padding: 24px 24px 32px; }
 }

@@ -42,11 +42,11 @@
 .tableWrap {
   background: var(--white);
   border-radius: 12px;
-  overflow: hidden;
+  overflow-x: auto;
   box-shadow: 0 1px 4px rgba(0,0,0,.06);
 }
 
-.table { width: 100%; border-collapse: collapse; }
+.table { width: 100%; min-width: 600px; border-collapse: collapse; }
 
 .table thead tr {
   border-bottom: 1px solid #f0f0f0;
@@ -241,6 +241,20 @@
   margin-bottom: 8px;
 }
 .deleteText strong { color: var(--navy); }
+
+@media (max-width: 650px) {
+  .pageHeader { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .headerActions { flex-wrap: wrap; }
+  .fieldRow { grid-template-columns: 1fr; }
+  .logItem { flex-direction: column; align-items: flex-start; gap: 6px; padding: 14px 0; }
+  .logDivider { display: none; }
+  .logExecutor { min-width: unset; text-align: left; }
+  .logBadge { align-self: flex-start; }
+  .pagination { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .filterBar { flex-direction: column; align-items: flex-start; }
+  .filterInput { width: 100%; box-sizing: border-box; }
+  .filterDateGroup { width: 100%; }
+}
 
 /* Status messages */
 .statusMsg {

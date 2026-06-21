@@ -478,3 +478,15 @@
   transition: background .2s;
 }
 .btnSalvar:hover { opacity: .88; }
+
+@media (max-width: 900px) {
+  .actionBar { left: 0; padding: 12px 20px; }
+}
+
+@media (max-width: 650px) {
+  .metaRow { grid-template-columns: 1fr; }
+  .metaControls { flex-wrap: wrap; gap: 10px; }
+  .editor { padding: 20px 18px; }
+  .actionRight { flex-wrap: wrap; gap: 8px; }
+  .btnPreview, .btnSalvar { flex: 1; justify-content: center; }
+}

@@ -326,3 +326,16 @@
   0%   { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+@media (max-width: 900px) {
+  .shell { margin: -64px -20px 0; }
+  .navbar { padding: 0 20px; }
+}
+
+@media (max-width: 650px) {
+  .title { font-size: 1.8rem; }
+  .cover { height: 220px; }
+  .navStatus { display: none; }
+  .meta { gap: 14px; }
+  .metaDivider { display: none; }
+}

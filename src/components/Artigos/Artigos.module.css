@@ -146,4 +146,6 @@
   .inner { padding: 0 24px; }
   .grid { grid-template-columns: 1fr; }
   .sideArrow { display: none; }
+  .carouselRow { margin: 0; }
+  .skeletonRow { grid-template-columns: 1fr; }
 }

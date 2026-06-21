@@ -130,3 +130,9 @@
   transition: background .2s;
 }
 .btnConfirm:hover { background: var(--navy-mid); }
+
+@media (max-width: 480px) {
+  .box { padding: 18px 14px 14px; }
+  .footer { flex-direction: column-reverse; }
+  .btnCancel, .btnConfirm { width: 100%; justify-content: center; }
+}

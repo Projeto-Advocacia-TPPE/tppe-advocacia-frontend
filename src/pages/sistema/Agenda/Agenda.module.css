@@ -220,6 +220,24 @@
   .calCell { min-height: 70px; }
 }
 
+@media (max-width: 480px) {
+  .pageHeader { flex-direction: column; align-items: flex-start; }
+  .headerRight { width: 100%; }
+  .monthNav { flex: 1; justify-content: space-between; }
+  .mRow3 { grid-template-columns: 1fr; }
+  .detalhesModal { padding: 18px; }
+  .detalhesRow { flex-direction: column; gap: 16px; }
+  .detalhesActions { flex-wrap: wrap; }
+  .modalBody { padding: 14px 16px; }
+  .modalFooter { padding: 12px 16px; flex-wrap: wrap; }
+  .calcForm { padding: 18px; }
+  .calcResultado { padding: 18px; }
+  .calHeaderCell { padding: 8px 2px; font-size: .6rem; letter-spacing: 0; }
+  .calCell { padding: 4px; min-height: 52px; }
+  .dayNum { font-size: .72rem; }
+  .eventChip { font-size: .6rem; padding: 1px 4px; }
+}
+
 /* ── Utility ── */
 .formError {
   color: #c62828; font-size: .85rem;

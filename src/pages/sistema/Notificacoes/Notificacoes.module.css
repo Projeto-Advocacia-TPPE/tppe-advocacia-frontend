@@ -75,7 +75,7 @@
   background: var(--white);
   border-radius: 12px;
   box-shadow: 0 1px 4px rgba(0,0,0,.06);
-  overflow: hidden;
+  overflow-x: auto;
 }
 
 .alertHeader {
@@ -109,7 +109,7 @@
 
 /* ── Table ── */
 .table {
-  width: 100%; border-collapse: collapse;
+  width: 100%; min-width: 500px; border-collapse: collapse;
 }
 
 .table thead tr { border-bottom: 1px solid #f0f0f0; }
@@ -213,4 +213,8 @@
 @media (max-width: 900px) {
   .configRow { grid-template-columns: 1fr; }
   .alertHeader { flex-direction: column; align-items: flex-start; }
+}
+@media (max-width: 650px) {
+  .tableFooter { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .pagination { flex-wrap: wrap; }
 }
