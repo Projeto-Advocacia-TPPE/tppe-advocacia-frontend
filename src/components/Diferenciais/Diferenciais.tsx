@@ -6,8 +6,9 @@ import styles from './Diferenciais.module.css';
 export default function Diferenciais() {
   const { config } = useOfficeConfig();
 
-  const items = config?.differentials?.length
-    ? config.differentials
+  const validDiffs = (config?.differentials ?? []).filter(d => d.title || d.description);
+  const items = validDiffs.length
+    ? validDiffs
     : staticDiferenciais.map(d => ({ title: d.title, description: d.description }));
 
   return (

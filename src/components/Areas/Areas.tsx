@@ -6,8 +6,9 @@ import styles from './Areas.module.css';
 export default function Areas() {
   const { config } = useOfficeConfig();
 
-  const items = config?.areas_of_practice?.length
-    ? config.areas_of_practice
+  const validAreas = (config?.areas_of_practice ?? []).filter(a => a.title || a.description);
+  const items = validAreas.length
+    ? validAreas
     : staticAreas.map(a => ({ title: a.title, description: a.description }));
 
   return (
