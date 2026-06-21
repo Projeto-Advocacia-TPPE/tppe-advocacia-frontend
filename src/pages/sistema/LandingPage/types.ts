@@ -19,6 +19,8 @@ export interface LandingPageData {
   // Links
   linkedin: string;
   instagram: string;
+  whatsapp: string;
+  website: string;
 
   // Hero
   heroTitulo: string;

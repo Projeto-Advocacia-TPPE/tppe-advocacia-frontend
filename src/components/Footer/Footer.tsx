@@ -15,6 +15,8 @@ export default function Footer() {
 
   const linkedinUrl  = config?.linkedin_url  ?? '#';
   const instagramUrl = config?.instagram_url ?? '#';
+  const whatsappUrl  = config?.whatsapp_url  ?? '#';
+  const websiteUrl   = config?.website_url   ?? '#';
   const oab          = config?.lawyer_oab    ?? 'OAB/SP 123.456';
 
   return (
@@ -35,6 +37,8 @@ export default function Footer() {
         <div className={styles.social}>
           <a href={linkedinUrl}  className={styles.link} target="_blank" rel="noopener noreferrer">LinkedIn</a>
           <a href={instagramUrl} className={styles.link} target="_blank" rel="noopener noreferrer">Instagram</a>
+          <a href={whatsappUrl}  className={styles.link} target="_blank" rel="noopener noreferrer">WhatsApp</a>
+          <a href={websiteUrl}   className={styles.link} target="_blank" rel="noopener noreferrer">Site do Escritório</a>
         </div>
       </div>
 

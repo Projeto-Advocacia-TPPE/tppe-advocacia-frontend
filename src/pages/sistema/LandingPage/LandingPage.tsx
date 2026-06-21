@@ -24,7 +24,7 @@ const EMPTY_AREAS: AreaAtuacao[] = [
 
 const EMPTY_DATA: LandingPageData = {
   email: '', endereco: '', telefone: '',
-  linkedin: '', instagram: '',
+  linkedin: '', instagram: '', whatsapp: '', website: '',
   heroTitulo: '', heroSubtexto: '', heroImagem: '', heroImagemPos: { x: 50, y: 50 },
   escritorioTitulo: '', escritorioConteudo: '', escritorioImagem: '', escritorioImagemPos: { x: 50, y: 50 },
   advogadoTitulo: '', advogadoOab: '', advogadoConteudo: '', advogadoImagem: '', advogadoImagemPos: { x: 50, y: 50 },
@@ -234,12 +234,24 @@ export default function LandingPageConfig() {
 
       {/* ── Links ── */}
       <SectionCard icon={<Link2 size={20} />} title="Links">
-        <Field label="LINKEDIN">
-          <input className={styles.input} value={data.linkedin} onChange={e => set('linkedin', e.target.value)} />
-        </Field>
-        <Field label="INSTAGRAM">
-          <input className={styles.input} value={data.instagram} onChange={e => set('instagram', e.target.value)} />
-        </Field>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div className={styles.row2}>
+          <Field label="LINKEDIN DO ADVOGADO">
+            <input className={styles.input} value={data.linkedin} onChange={e => set('linkedin', e.target.value)} />
+          </Field>
+          <Field label="INSTAGRAM DO ADVOGADO">
+            <input className={styles.input} value={data.instagram} onChange={e => set('instagram', e.target.value)} />
+          </Field>
+        </div>
+        <div className={styles.row2}>
+          <Field label="WHATSAPP">
+            <input className={styles.input} value={data.whatsapp} onChange={e => set('whatsapp', e.target.value)} />
+          </Field>
+          <Field label="SITE DO ESCRITÓRIO">
+            <input className={styles.input} value={data.website} onChange={e => set('website', e.target.value)} />
+          </Field>
+        </div>
+        </div>
       </SectionCard>
 
       {/* ── Hero ── */}
