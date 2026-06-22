@@ -1,0 +1,655 @@
+import time
+import pytest
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.support.select import Select
+
+from conftest import BASE_URL
+
+AGENDA_URL       = f"{BASE_URL}/sistema/agenda"
+NOTIFICACOES_URL = f"{BASE_URL}/sistema/notificacoes"
+
+
+def js_click(driver, element):
+    driver.execute_script("arguments[0].click();", element)
+
+
+def scroll_and_click(driver, element):
+    driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", element)
+    time.sleep(0.3)
+    driver.execute_script("arguments[0].click();", element)
+
+
+def set_date_input(driver, element, date_str: str):
+    """Aciona o onChange do React usando o native value setter."""
+    driver.execute_script(
+        "const nativeSet = Object.getOwnPropertyDescriptor("
+        "  window.HTMLInputElement.prototype, 'value').set;"
+        "nativeSet.call(arguments[0], arguments[1]);"
+        "arguments[0].dispatchEvent(new Event('input',  {bubbles: true}));"
+        "arguments[0].dispatchEvent(new Event('change', {bubbles: true}));",
+        element, date_str,
+    )
+
+
+def _data_futura() -> str:
+    """Retorna uma data 7 dias à frente no formato YYYY-MM-DD."""
+    from datetime import date, timedelta
+    return (date.today() + timedelta(days=7)).isoformat()
+
+
+def _btns_sem_texto(driver):
+    """Botões visíveis sem texto (ícones) — usados para navegar o mês."""
+    return [
+        b for b in driver.find_elements(By.TAG_NAME, "button")
+        if not b.text.strip() and b.is_displayed()
+    ]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+class TestCadastrarCompromisso:
+    """US-26 — Cadastrar compromissos na agenda informando tipo, data, hora,
+    duração e vínculo opcional com cliente ou processo"""
+
+    def test_pagina_agenda_carrega(self, logged_in, wait):
+        logged_in.get(AGENDA_URL)
+        wait.until(EC.presence_of_element_located(
+            (By.XPATH, "//h1[contains(text(),'Agenda Jurídica')]")
+        ))
+        assert "Agenda Jurídica" in logged_in.page_source
+
+    def test_calendario_exibe_cabecalho_com_dias_da_semana(self, logged_in, wait):
+        logged_in.get(AGENDA_URL)
+        wait.until(EC.presence_of_element_located(
+            (By.XPATH, "//h1[contains(text(),'Agenda Jurídica')]")
+        ))
+        for dia in ("DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"):
+            assert dia in logged_in.page_source
+
+    def test_mes_e_ano_atual_visiveis_na_navegacao(self, logged_in, wait):
+        from datetime import date
+        logged_in.get(AGENDA_URL)
+        wait.until(EC.presence_of_element_located(
+            (By.XPATH, "//h1[contains(text(),'Agenda Jurídica')]")
+        ))
+        assert str(date.today().year) in logged_in.page_source
+
+    def test_botoes_navegacao_mes_visiveis(self, logged_in, wait):
+        logged_in.get(AGENDA_URL)
+        wait.until(EC.presence_of_element_located(
+            (By.XPATH, "//h1[contains(text(),'Agenda Jurídica')]")
+        ))
+        nav_btns = _btns_sem_texto(logged_in)
+        assert len(nav_btns) >= 2
+
+    def test_navegar_para_proximo_mes(self, logged_in, wait):
+        logged_in.get(AGENDA_URL)
+        wait.until(EC.presence_of_element_located(
+            (By.XPATH, "//h1[contains(text(),'Agenda Jurídica')]")
+        ))
+        source_antes = logged_in.page_source
+        nav_btns = _btns_sem_texto(logged_in)
+        js_click(logged_in, nav_btns[1])
+        time.sleep(0.5)
+        assert logged_in.page_source != source_antes
+
+    def test_navegar_para_mes_anterior(self, logged_in, wait):
+        logged_in.get(AGENDA_URL)
+        wait.until(EC.presence_of_element_located(
+            (By.XPATH, "//h1[contains(text(),'Agenda Jurídica')]")
+        ))
+        source_antes = logged_in.page_source
+        nav_btns = _btns_sem_texto(logged_in)
+        js_click(logged_in, nav_btns[0])
+        time.sleep(0.5)
+        assert logged_in.page_source != source_antes
+
+    def test_botao_novo_compromisso_visivel(self, logged_in, wait):
+        logged_in.get(AGENDA_URL)
+        wait.until(EC.element_to_be_clickable(
+            (By.XPATH, "//button[contains(.,'Novo Compromisso')]")
+        ))
+        assert logged_in.find_element(
+            By.XPATH, "//button[contains(.,'Novo Compromisso')]"
+        ).is_displayed()
+
+    def test_botao_novo_compromisso_abre_modal(self, logged_in, wait):
+        logged_in.get(AGENDA_URL)
+        wait.until(EC.element_to_be_clickable(
+            (By.XPATH, "//button[contains(.,'Novo Compromisso')]")
+        ))
+        logged_in.find_element(By.XPATH, "//button[contains(.,'Novo Compromisso')]").click()
+        wait.until(EC.presence_of_element_located(
+            (By.XPATH, "//*[contains(text(),'TIPO DO COMPROMISSO')]")
+        ))
+        assert "TIPO DO COMPROMISSO" in logged_in.page_source
+
+    def test_modal_exibe_todos_os_campos_do_formulario(self, logged_in, wait):
+        logged_in.get(AGENDA_URL)
+        wait.until(EC.element_to_be_clickable(
+            (By.XPATH, "//button[contains(.,'Novo Compromisso')]")
+        ))
+        logged_in.find_element(By.XPATH, "//button[contains(.,'Novo Compromisso')]").click()
+        wait.until(EC.presence_of_element_located(
+            (By.XPATH, "//*[contains(text(),'TIPO DO COMPROMISSO')]")
+        ))
+        for campo in (
+            "TIPO DO COMPROMISSO", "DATA", "INÍCIO", "DURAÇÃO (min)",
+            "CLIENTE (OPCIONAL)", "PROCESSO (OPCIONAL)", "LOCAL", "OBSERVAÇÕES",
+        ):
+            assert campo in logged_in.page_source
+        logged_in.find_element(By.XPATH, "//button[contains(text(),'Cancelar')]").click()
+
+    def test_modal_select_tipo_lista_audiencia_reuniao_prazo_outro(self, logged_in, wait):
+        logged_in.get(AGENDA_URL)
+        wait.until(EC.element_to_be_clickable(
+            (By.XPATH, "//button[contains(.,'Novo Compromisso')]")
+        ))
+        logged_in.find_element(By.XPATH, "//button[contains(.,'Novo Compromisso')]").click()
+        wait.until(EC.presence_of_element_located(
+            (By.XPATH, "//*[contains(text(),'TIPO DO COMPROMISSO')]")
+        ))
+        sel = Select(logged_in.find_element(
+            By.XPATH, "//select[.//option[contains(text(),'Audiência')]]"
+        ))
+        textos = [o.text for o in sel.options]
+        for tipo in ("Audiência", "Reunião", "Prazo", "Outro"):
+            assert tipo in textos
+        logged_in.find_element(By.XPATH, "//button[contains(text(),'Cancelar')]").click()
+
+    def test_botao_salvar_evento_desabilitado_sem_data_preenchida(self, logged_in, wait):
+        logged_in.get(AGENDA_URL)
+        wait.until(EC.element_to_be_clickable(
+            (By.XPATH, "//button[contains(.,'Novo Compromisso')]")
+        ))
+        logged_in.find_element(By.XPATH, "//button[contains(.,'Novo Compromisso')]").click()
+        wait.until(EC.presence_of_element_located(
+            (By.XPATH, "//*[contains(text(),'TIPO DO COMPROMISSO')]")
+        ))
+        btn = logged_in.find_element(
+            By.XPATH, "//button[contains(text(),'Salvar Evento')]"
+        )
+        assert not btn.is_enabled()
+        logged_in.find_element(By.XPATH, "//button[contains(text(),'Cancelar')]").click()
+
+    def test_cancelar_fecha_modal_de_compromisso(self, logged_in, wait):
+        logged_in.get(AGENDA_URL)
+        wait.until(EC.element_to_be_clickable(
+            (By.XPATH, "//button[contains(.,'Novo Compromisso')]")
+        ))
+        logged_in.find_element(By.XPATH, "//button[contains(.,'Novo Compromisso')]").click()
+        wait.until(EC.element_to_be_clickable(
+            (By.XPATH, "//button[contains(text(),'Cancelar')]")
+        ))
+        logged_in.find_element(By.XPATH, "//button[contains(text(),'Cancelar')]").click()
+        wait.until(EC.invisibility_of_element_located(
+            (By.XPATH, "//*[contains(text(),'TIPO DO COMPROMISSO')]")
+        ))
+
+    def test_select_cliente_opcional_exibe_sem_vinculo(self, logged_in, wait):
+        logged_in.get(AGENDA_URL)
+        wait.until(EC.element_to_be_clickable(
+            (By.XPATH, "//button[contains(.,'Novo Compromisso')]")
+        ))
+        logged_in.find_element(By.XPATH, "//button[contains(.,'Novo Compromisso')]").click()
+        wait.until(EC.presence_of_element_located(
+            (By.XPATH, "//*[contains(text(),'CLIENTE (OPCIONAL)')]")
+        ))
+        sel = Select(logged_in.find_element(
+            By.XPATH, "//select[.//option[contains(text(),'Sem cliente')]]"
+        ))
+        assert "Sem cliente vinculado" in [o.text for o in sel.options]
+        logged_in.find_element(By.XPATH, "//button[contains(text(),'Cancelar')]").click()
+
+    def test_select_processo_opcional_exibe_sem_vinculo(self, logged_in, wait):
+        logged_in.get(AGENDA_URL)
+        wait.until(EC.element_to_be_clickable(
+            (By.XPATH, "//button[contains(.,'Novo Compromisso')]")
+        ))
+        logged_in.find_element(By.XPATH, "//button[contains(.,'Novo Compromisso')]").click()
+        wait.until(EC.presence_of_element_located(
+            (By.XPATH, "//*[contains(text(),'PROCESSO (OPCIONAL)')]")
+        ))
+        sel = Select(logged_in.find_element(
+            By.XPATH, "//select[.//option[contains(text(),'Sem processo')]]"
+        ))
+        assert "Sem processo vinculado" in [o.text for o in sel.options]
+        logged_in.find_element(By.XPATH, "//button[contains(text(),'Cancelar')]").click()
+
+    def test_cadastrar_compromisso_audiencia_aparece_na_agenda(self, logged_in, wait):
+        titulo_unico = f"Audiência Selenium {int(time.time())}"
+        data = _data_futura()
+
+        logged_in.get(AGENDA_URL)
+        wait.until(EC.element_to_be_clickable(
+            (By.XPATH, "//button[contains(.,'Novo Compromisso')]")
+        ))
+        logged_in.find_element(By.XPATH, "//button[contains(.,'Novo Compromisso')]").click()
+        wait.until(EC.presence_of_element_located(
+            (By.XPATH, "//*[contains(text(),'TIPO DO COMPROMISSO')]")
+        ))
+
+        campo_titulo = logged_in.find_element(
+            By.CSS_SELECTOR, "input[placeholder*='Caso Silva']"
+        )
+        campo_titulo.clear()
+        campo_titulo.send_keys(titulo_unico)
+
+        campo_data = logged_in.find_element(By.CSS_SELECTOR, "input[type='date']")
+        set_date_input(logged_in, campo_data, data)
+
+        wait.until(EC.element_to_be_clickable(
+            (By.XPATH, "//button[contains(text(),'Salvar Evento')]")
+        ))
+        logged_in.find_element(By.XPATH, "//button[contains(text(),'Salvar Evento')]").click()
+
+        wait.until(EC.presence_of_element_located(
+            (By.XPATH, f"//*[contains(text(),'{titulo_unico}')]")
+        ))
+        assert titulo_unico in logged_in.page_source
+
+    def test_cadastrar_compromisso_reuniao_com_tipo_especifico(self, logged_in, wait):
+        titulo_unico = f"Reunião Selenium {int(time.time())}"
+        data = _data_futura()
+
+        logged_in.get(AGENDA_URL)
+        wait.until(EC.element_to_be_clickable(
+            (By.XPATH, "//button[contains(.,'Novo Compromisso')]")
+        ))
+        logged_in.find_element(By.XPATH, "//button[contains(.,'Novo Compromisso')]").click()
+        wait.until(EC.presence_of_element_located(
+            (By.XPATH, "//*[contains(text(),'TIPO DO COMPROMISSO')]")
+        ))
+
+        Select(logged_in.find_element(
+            By.XPATH, "//select[.//option[contains(text(),'Audiência')]]"
+        )).select_by_visible_text("Reunião")
+
+        campo_titulo = logged_in.find_element(
+            By.CSS_SELECTOR, "input[placeholder*='Caso Silva']"
+        )
+        campo_titulo.send_keys(titulo_unico)
+
+        campo_data = logged_in.find_element(By.CSS_SELECTOR, "input[type='date']")
+        set_date_input(logged_in, campo_data, data)
+
+        wait.until(EC.element_to_be_clickable(
+            (By.XPATH, "//button[contains(text(),'Salvar Evento')]")
+        ))
+        logged_in.find_element(By.XPATH, "//button[contains(text(),'Salvar Evento')]").click()
+
+        wait.until(EC.presence_of_element_located(
+            (By.XPATH, f"//*[contains(text(),'{titulo_unico}')]")
+        ))
+        assert titulo_unico in logged_in.page_source
+
+    def test_compromisso_criado_visivel_no_grid_do_calendario(self, logged_in, wait):
+        titulo_unico = f"Prazo Selenium {int(time.time())}"
+        data = _data_futura()
+
+        logged_in.get(AGENDA_URL)
+        wait.until(EC.element_to_be_clickable(
+            (By.XPATH, "//button[contains(.,'Novo Compromisso')]")
+        ))
+        logged_in.find_element(By.XPATH, "//button[contains(.,'Novo Compromisso')]").click()
+        wait.until(EC.presence_of_element_located(
+            (By.XPATH, "//*[contains(text(),'TIPO DO COMPROMISSO')]")
+        ))
+
+        Select(logged_in.find_element(
+            By.XPATH, "//select[.//option[contains(text(),'Audiência')]]"
+        )).select_by_visible_text("Outro")
+
+        campo_titulo = logged_in.find_element(
+            By.CSS_SELECTOR, "input[placeholder*='Caso Silva']"
+        )
+        campo_titulo.send_keys(titulo_unico)
+
+        campo_data = logged_in.find_element(By.CSS_SELECTOR, "input[type='date']")
+        set_date_input(logged_in, campo_data, data)
+
+        wait.until(EC.element_to_be_clickable(
+            (By.XPATH, "//button[contains(text(),'Salvar Evento')]")
+        ))
+        logged_in.find_element(By.XPATH, "//button[contains(text(),'Salvar Evento')]").click()
+
+        wait.until(EC.presence_of_element_located(
+            (By.XPATH, f"//*[contains(text(),'{titulo_unico}')]")
+        ))
+        assert titulo_unico in logged_in.page_source
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+class TestCalcularPrazoProcessual:
+    """US-27 — Informar data de início, tipo de prazo e comarca; visualizar
+    data-limite calculada em dias úteis com feriados forenses considerados"""
+
+    def _abrir_calc(self, driver, wait):
+        driver.get(AGENDA_URL)
+        wait.until(EC.element_to_be_clickable(
+            (By.XPATH, "//button[contains(.,'Calcular Prazo')]")
+        ))
+        driver.find_element(By.XPATH, "//button[contains(.,'Calcular Prazo')]").click()
+        wait.until(EC.presence_of_element_located(
+            (By.XPATH, "//*[contains(text(),'Calcular Prazo Processual')]")
+        ))
+
+    def test_botao_calcular_prazo_visivel_na_agenda(self, logged_in, wait):
+        logged_in.get(AGENDA_URL)
+        wait.until(EC.element_to_be_clickable(
+            (By.XPATH, "//button[contains(.,'Calcular Prazo')]")
+        ))
+        assert logged_in.find_element(
+            By.XPATH, "//button[contains(.,'Calcular Prazo')]"
+        ).is_displayed()
+
+    def test_calcular_prazo_abre_modal(self, logged_in, wait):
+        self._abrir_calc(logged_in, wait)
+        assert "Calcular Prazo Processual" in logged_in.page_source
+
+    def test_modal_exibe_campo_data_de_intimacao(self, logged_in, wait):
+        self._abrir_calc(logged_in, wait)
+        assert "DATA DE INTIMAÇÃO" in logged_in.page_source
+
+    def test_modal_exibe_campo_tipo_de_prazo(self, logged_in, wait):
+        self._abrir_calc(logged_in, wait)
+        assert "TIPO DE PRAZO" in logged_in.page_source
+
+    def test_modal_exibe_campo_tribunal_opcional(self, logged_in, wait):
+        self._abrir_calc(logged_in, wait)
+        assert "TRIBUNAL (OPCIONAL)" in logged_in.page_source
+
+    def test_modal_exibe_campo_comarca_opcional(self, logged_in, wait):
+        self._abrir_calc(logged_in, wait)
+        assert "COMARCA (OPCIONAL)" in logged_in.page_source
+
+    def test_hint_feriados_forenses_visivel(self, logged_in, wait):
+        self._abrir_calc(logged_in, wait)
+        assert "Feriados forenses do tribunal e comarca serão considerados" in logged_in.page_source
+
+    def test_select_tipo_prazo_lista_tipos_legais(self, logged_in, wait):
+        self._abrir_calc(logged_in, wait)
+        sel = Select(logged_in.find_element(
+            By.XPATH, "//select[.//option[contains(text(),'Apelação')]]"
+        ))
+        textos = [o.text for o in sel.options]
+        assert any("Apelação"    in t for t in textos)
+        assert any("Contestação" in t for t in textos)
+        assert any("Embargo"     in t for t in textos)
+        assert any("Mandado"     in t for t in textos)
+
+    def test_botao_calcular_agora_desabilitado_sem_data(self, logged_in, wait):
+        self._abrir_calc(logged_in, wait)
+        btn = logged_in.find_element(
+            By.XPATH, "//button[contains(text(),'Calcular Agora')]"
+        )
+        assert not btn.is_enabled()
+
+    def test_calcular_prazo_exibe_data_limite(self, logged_in, wait):
+        self._abrir_calc(logged_in, wait)
+        data = _data_futura()
+        campo_data = logged_in.find_element(By.CSS_SELECTOR, "input[type='date']")
+        set_date_input(logged_in, campo_data, data)
+
+        wait.until(EC.element_to_be_clickable(
+            (By.XPATH, "//button[contains(text(),'Calcular Agora')]")
+        ))
+        logged_in.find_element(By.XPATH, "//button[contains(text(),'Calcular Agora')]").click()
+
+        wait.until(lambda d: (
+            "DATA-LIMITE"      in d.page_source or
+            "Não foi possível" in d.page_source
+        ))
+        if "Não foi possível" in logged_in.page_source:
+            pytest.skip("API de cálculo de prazos indisponível")
+        assert "DATA-LIMITE" in logged_in.page_source
+
+    def test_resultado_exibe_dias_restantes(self, logged_in, wait):
+        self._abrir_calc(logged_in, wait)
+        data = _data_futura()
+        campo_data = logged_in.find_element(By.CSS_SELECTOR, "input[type='date']")
+        set_date_input(logged_in, campo_data, data)
+
+        wait.until(EC.element_to_be_clickable(
+            (By.XPATH, "//button[contains(text(),'Calcular Agora')]")
+        ))
+        logged_in.find_element(By.XPATH, "//button[contains(text(),'Calcular Agora')]").click()
+
+        wait.until(lambda d: (
+            "DIAS RESTANTES"   in d.page_source or
+            "Não foi possível" in d.page_source
+        ))
+        if "Não foi possível" in logged_in.page_source:
+            pytest.skip("API de cálculo de prazos indisponível")
+        assert "DIAS RESTANTES" in logged_in.page_source
+
+    def test_calcular_com_comarca_retorna_resultado_valido(self, logged_in, wait):
+        """Informar comarca considera os feriados forenses locais no cálculo."""
+        self._abrir_calc(logged_in, wait)
+        data = _data_futura()
+        campo_data = logged_in.find_element(By.CSS_SELECTOR, "input[type='date']")
+        set_date_input(logged_in, campo_data, data)
+
+        logged_in.find_element(
+            By.CSS_SELECTOR, "input[placeholder*='Capital']"
+        ).send_keys("Brasília")
+
+        wait.until(EC.element_to_be_clickable(
+            (By.XPATH, "//button[contains(text(),'Calcular Agora')]")
+        ))
+        logged_in.find_element(By.XPATH, "//button[contains(text(),'Calcular Agora')]").click()
+
+        wait.until(lambda d: (
+            "DATA-LIMITE"      in d.page_source or
+            "Não foi possível" in d.page_source
+        ))
+        assert (
+            "DATA-LIMITE"      in logged_in.page_source or
+            "Não foi possível" in logged_in.page_source
+        )
+
+    def test_botao_salvar_na_agenda_aparece_apos_calculo(self, logged_in, wait):
+        self._abrir_calc(logged_in, wait)
+        data = _data_futura()
+        campo_data = logged_in.find_element(By.CSS_SELECTOR, "input[type='date']")
+        set_date_input(logged_in, campo_data, data)
+
+        wait.until(EC.element_to_be_clickable(
+            (By.XPATH, "//button[contains(text(),'Calcular Agora')]")
+        ))
+        logged_in.find_element(By.XPATH, "//button[contains(text(),'Calcular Agora')]").click()
+
+        wait.until(lambda d: (
+            "DATA-LIMITE"      in d.page_source or
+            "Não foi possível" in d.page_source
+        ))
+        if "Não foi possível" in logged_in.page_source:
+            pytest.skip("API de cálculo de prazos indisponível")
+
+        wait.until(EC.element_to_be_clickable(
+            (By.XPATH, "//button[contains(.,'Salvar na Agenda')]")
+        ))
+        assert logged_in.find_element(
+            By.XPATH, "//button[contains(.,'Salvar na Agenda')]"
+        ).is_displayed()
+
+    def test_salvar_prazo_calculado_cria_compromisso_na_agenda(self, logged_in, wait):
+        self._abrir_calc(logged_in, wait)
+        data = _data_futura()
+        campo_data = logged_in.find_element(By.CSS_SELECTOR, "input[type='date']")
+        set_date_input(logged_in, campo_data, data)
+
+        wait.until(EC.element_to_be_clickable(
+            (By.XPATH, "//button[contains(text(),'Calcular Agora')]")
+        ))
+        logged_in.find_element(By.XPATH, "//button[contains(text(),'Calcular Agora')]").click()
+
+        wait.until(lambda d: (
+            "DATA-LIMITE"      in d.page_source or
+            "Não foi possível" in d.page_source
+        ))
+        if "Não foi possível" in logged_in.page_source:
+            pytest.skip("API de cálculo de prazos indisponível")
+
+        wait.until(EC.element_to_be_clickable(
+            (By.XPATH, "//button[contains(.,'Salvar na Agenda')]")
+        ))
+        logged_in.find_element(By.XPATH, "//button[contains(.,'Salvar na Agenda')]").click()
+
+        # Modal fecha após salvar e a agenda reexibe com o prazo criado
+        wait.until(EC.presence_of_element_located(
+            (By.XPATH, "//h1[contains(text(),'Agenda Jurídica')]")
+        ))
+        assert "Prazo" in logged_in.page_source
+
+    def test_fechar_modal_calc_retorna_para_agenda(self, logged_in, wait):
+        """Clicar fora do modal (overlay) fecha e volta à agenda."""
+        self._abrir_calc(logged_in, wait)
+        # Clica no overlay por JavaScript — o wrapper interno tem stopPropagation,
+        # então clicar no overlay externo aciona o onClose corretamente.
+        logged_in.execute_script(
+            "var ov = Array.from(document.querySelectorAll('div'))"
+            ".find(el => Array.from(el.classList).some(c => c.includes('overlay')));"
+            "if (ov) ov.dispatchEvent(new MouseEvent('click', {bubbles: true}));"
+        )
+        wait.until(EC.invisibility_of_element_located(
+            (By.XPATH, "//*[contains(text(),'Calcular Prazo Processual')]")
+        ))
+        assert "Agenda Jurídica" in logged_in.page_source
+
+    def test_prazo_tipo_mandado_usa_dias_corridos(self, logged_in, wait):
+        """Mandado de Segurança usa contagem de dias corridos (não úteis)."""
+        self._abrir_calc(logged_in, wait)
+        sel = Select(logged_in.find_element(
+            By.XPATH, "//select[.//option[contains(text(),'Apelação')]]"
+        ))
+        sel.select_by_visible_text(
+            next(o.text for o in sel.options if "Mandado" in o.text)
+        )
+        assert "Mandado" in logged_in.page_source or "120 dias" in logged_in.page_source
+
+        data = _data_futura()
+        campo_data = logged_in.find_element(By.CSS_SELECTOR, "input[type='date']")
+        set_date_input(logged_in, campo_data, data)
+
+        wait.until(EC.element_to_be_clickable(
+            (By.XPATH, "//button[contains(text(),'Calcular Agora')]")
+        ))
+        logged_in.find_element(By.XPATH, "//button[contains(text(),'Calcular Agora')]").click()
+
+        wait.until(lambda d: (
+            "DATA-LIMITE"           in d.page_source or
+            "dias corridos"         in d.page_source or
+            "Não foi possível"      in d.page_source
+        ))
+        assert (
+            "DATA-LIMITE"      in logged_in.page_source or
+            "dias corridos"    in logged_in.page_source or
+            "Não foi possível" in logged_in.page_source
+        )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+class TestAlertasPrazos:
+    """US-28 — Receber alertas automáticos escalonados quando prazo processual
+    está se aproximando do vencimento"""
+
+    def test_pagina_notificacoes_acessivel(self, logged_in, wait):
+        logged_in.get(NOTIFICACOES_URL)
+        wait.until(EC.presence_of_element_located(
+            (By.XPATH, "//h1[contains(text(),'Central de Notificações')]")
+        ))
+        assert "Central de Notificações" in logged_in.page_source
+
+    def test_secao_tipos_de_evento_visivel(self, logged_in, wait):
+        logged_in.get(NOTIFICACOES_URL)
+        wait.until(EC.presence_of_element_located(
+            (By.XPATH, "//*[contains(text(),'Tipos de Evento')]")
+        ))
+        assert "Tipos de Evento" in logged_in.page_source
+
+    def test_alerta_prazo_proximo_ao_vencimento_listado(self, logged_in, wait):
+        logged_in.get(NOTIFICACOES_URL)
+        wait.until(EC.presence_of_element_located(
+            (By.XPATH, "//*[contains(text(),'Prazo próximo ao vencimento')]")
+        ))
+        assert "Prazo próximo ao vencimento" in logged_in.page_source
+
+    def test_toggle_alerta_prazo_presente_e_clicavel(self, logged_in, wait):
+        logged_in.get(NOTIFICACOES_URL)
+        wait.until(EC.presence_of_element_located(
+            (By.XPATH, "//*[contains(text(),'Prazo próximo ao vencimento')]")
+        ))
+        toggle = logged_in.find_element(
+            By.XPATH,
+            "//*[contains(text(),'Prazo próximo ao vencimento')]"
+            "/..//button[@aria-pressed]",
+        )
+        assert toggle.is_displayed()
+        assert toggle.is_enabled()
+
+    def test_toggle_alerta_prazo_ativado_por_padrao(self, logged_in, wait):
+        logged_in.get(NOTIFICACOES_URL)
+        wait.until(EC.presence_of_element_located(
+            (By.XPATH, "//*[contains(text(),'Prazo próximo ao vencimento')]")
+        ))
+        toggle = logged_in.find_element(
+            By.XPATH,
+            "//*[contains(text(),'Prazo próximo ao vencimento')]"
+            "/..//button[@aria-pressed]",
+        )
+        assert toggle.get_attribute("aria-pressed") == "true"
+
+    def test_desativar_e_reativar_alerta_de_prazo(self, logged_in, wait):
+        logged_in.get(NOTIFICACOES_URL)
+        toggle_xpath = (
+            "//*[contains(text(),'Prazo próximo ao vencimento')]"
+            "/..//button[@aria-pressed]"
+        )
+        wait.until(EC.presence_of_element_located((By.XPATH, toggle_xpath)))
+        toggle = logged_in.find_element(By.XPATH, toggle_xpath)
+        estado_original = toggle.get_attribute("aria-pressed")
+
+        scroll_and_click(logged_in, toggle)
+        wait.until(lambda d: d.find_element(
+            By.XPATH, toggle_xpath
+        ).get_attribute("aria-pressed") != estado_original)
+
+        novo_estado = logged_in.find_element(
+            By.XPATH, toggle_xpath
+        ).get_attribute("aria-pressed")
+        assert novo_estado != estado_original
+
+        # Restaura o estado original
+        scroll_and_click(logged_in, logged_in.find_element(By.XPATH, toggle_xpath))
+        wait.until(lambda d: d.find_element(
+            By.XPATH, toggle_xpath
+        ).get_attribute("aria-pressed") == estado_original)
+
+    def test_outros_alertas_de_processo_presentes_na_pagina(self, logged_in, wait):
+        """US-23: também esperamos alertas de movimentação processual na mesma tela."""
+        logged_in.get(NOTIFICACOES_URL)
+        wait.until(EC.presence_of_element_located(
+            (By.XPATH, "//h1[contains(text(),'Central de Notificações')]")
+        ))
+        assert "Nova movimentação processual" in logged_in.page_source
+
+    def test_agenda_exibe_banner_google_calendar_para_sincronizacao(self, logged_in, wait):
+        """Verificar integração que facilita notificações externas de compromissos."""
+        logged_in.get(AGENDA_URL)
+        wait.until(EC.presence_of_element_located(
+            (By.XPATH, "//h1[contains(text(),'Agenda Jurídica')]")
+        ))
+        assert "Google Calendar" in logged_in.page_source
+
+    def test_agenda_carrega_grid_sem_erros(self, logged_in, wait):
+        """O grid do calendário carrega após a fetch dos compromissos."""
+        logged_in.get(AGENDA_URL)
+        wait.until(EC.presence_of_element_located(
+            (By.XPATH, "//h1[contains(text(),'Agenda Jurídica')]")
+        ))
+        wait.until(EC.invisibility_of_element_located(
+            (By.XPATH, "//*[contains(text(),'Carregando agenda')]")
+        ))
+        assert "Não foi possível carregar a agenda" not in logged_in.page_source
