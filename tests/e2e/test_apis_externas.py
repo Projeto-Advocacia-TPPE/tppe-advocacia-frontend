@@ -5,7 +5,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support.select import Select
 
-from conftest import BASE_URL, do_login, do_logout
+from conftest import BASE_URL, do_login, do_logout, pause
 
 PROCESSOS_URL = f"{BASE_URL}/sistema/processos"
 LOGS_URL      = f"{BASE_URL}/sistema/logs-api"
@@ -33,10 +33,12 @@ class TestSincronizacaoDataJud:
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//button[contains(text(),'Sincronizar DataJud')]")
         ))
+        pause()
 
     def test_botao_sincronizar_datajud_visivel_na_ficha(self, logged_in, wait):
         logged_in.get(PROCESSOS_URL)
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "table")))
+        pause()
         try:
             self._abrir_ficha(logged_in, wait)
             assert logged_in.find_element(
@@ -49,6 +51,7 @@ class TestSincronizacaoDataJud:
         """Botão fica desabilitado quando o processo não tem alias de tribunal."""
         logged_in.get(PROCESSOS_URL)
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "table")))
+        pause()
         try:
             self._abrir_ficha(logged_in, wait)
             btn = logged_in.find_element(
@@ -66,8 +69,8 @@ class TestSincronizacaoDataJud:
         """Botão fica habilitado quando o processo tem alias de tribunal configurado."""
         logged_in.get(PROCESSOS_URL)
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "table")))
+        pause()
         try:
-            # Abre fichas até encontrar uma com alias configurado
             btns = logged_in.find_elements(By.XPATH, "//button[contains(text(),'Abrir Ficha')]")
             encontrou = False
             for btn_ficha in btns:
@@ -75,6 +78,7 @@ class TestSincronizacaoDataJud:
                 wait.until(EC.presence_of_element_located(
                     (By.XPATH, "//button[contains(text(),'Sincronizar DataJud')]")
                 ))
+                pause()
                 btn_sync = logged_in.find_element(
                     By.XPATH, "//button[contains(text(),'Sincronizar DataJud')]"
                 )
@@ -82,7 +86,6 @@ class TestSincronizacaoDataJud:
                     assert btn_sync.is_enabled()
                     encontrou = True
                     break
-                # Fecha modal e tenta o próximo
                 logged_in.find_element(
                     By.CSS_SELECTOR, "button[aria-label='Fechar']"
                 ).click()
@@ -98,6 +101,7 @@ class TestSincronizacaoDataJud:
         """Clicar em Sincronizar DataJud exibe mensagem de resultado (sucesso ou erro)."""
         logged_in.get(PROCESSOS_URL)
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "table")))
+        pause()
         try:
             btns = logged_in.find_elements(By.XPATH, "//button[contains(text(),'Abrir Ficha')]")
             clicou = False
@@ -106,20 +110,22 @@ class TestSincronizacaoDataJud:
                 wait.until(EC.presence_of_element_located(
                     (By.XPATH, "//button[contains(text(),'Sincronizar DataJud')]")
                 ))
+                pause()
                 btn_sync = logged_in.find_element(
                     By.XPATH, "//button[contains(text(),'Sincronizar DataJud')]"
                 )
                 if btn_sync.is_enabled():
                     btn_sync.click()
                     wait.until(lambda d: (
-                        "importada"           in d.page_source or
-                        "Nenhuma novidade"    in d.page_source or
-                        "indisponível"        in d.page_source or
-                        "não configurada"     in d.page_source or
-                        "não foi encontrado"  in d.page_source or
-                        "Sincronizando"       in d.page_source or
-                        "concluída"           in d.page_source
+                        "importada"          in d.page_source or
+                        "Nenhuma novidade"   in d.page_source or
+                        "indisponível"       in d.page_source or
+                        "não configurada"    in d.page_source or
+                        "não foi encontrado" in d.page_source or
+                        "Sincronizando"      in d.page_source or
+                        "concluída"          in d.page_source
                     ))
+                    pause()
                     clicou = True
                     break
                 logged_in.find_element(
@@ -134,49 +140,40 @@ class TestSincronizacaoDataJud:
             pytest.skip("Nenhum processo disponível")
 
     def test_movimentacoes_datajud_marcadas_na_timeline(self, logged_in, wait):
-        """Movimentações importadas do DataJud aparecem com rótulo 'DataJud' dentro
-        dos artigos da timeline (external_id != null no backend → label 'DataJud' no frontend).
-        Checa dentro dos <article> para não confundir com o botão 'Sincronizar DataJud'."""
         logged_in.get(PROCESSOS_URL)
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "table")))
+        pause()
         try:
             self._abrir_ficha(logged_in, wait)
             wait.until(EC.presence_of_element_located(
                 (By.XPATH, "//*[contains(text(),'Movimentações processuais')]")
             ))
-            # Verifica: há artigos de movimentação com rótulo DataJud dentro da timeline,
-            # OU a timeline está vazia (processo sem movimentações é situação válida)
+            pause()
             entradas_datajud = logged_in.find_elements(
                 By.XPATH, "//article[contains(.,'DataJud')]"
             )
             estado_vazio = "Nenhuma movimentação" in logged_in.page_source
-            assert len(entradas_datajud) >= 0 or estado_vazio  # always true — garante que o find não lançou exceção
-            # Asserção real: a estrutura dos artigos está presente quando há movimentações
+            assert len(entradas_datajud) >= 0 or estado_vazio
             if not estado_vazio:
                 assert logged_in.find_elements(By.CSS_SELECTOR, "article")
         except NoSuchElementException:
             pytest.skip("Nenhum processo disponível")
 
     def test_timeline_distingue_todas_as_origens(self, logged_in, wait):
-        """A timeline exibe rótulo de origem conforme o backend:
-        - source=MANUAL → 'Manual'
-        - source=SYSTEM, external_id=null → 'Sistema' (ex.: mudança de status automática)
-        - source=SYSTEM, external_id!=null → 'DataJud' (importado via sync)
-        O rótulo 'DataJud' só é buscado dentro de <article> para não colidir
-        com o texto do botão 'Sincronizar DataJud'."""
         logged_in.get(PROCESSOS_URL)
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "table")))
+        pause()
         try:
             self._abrir_ficha(logged_in, wait)
             wait.until(EC.presence_of_element_located(
                 (By.XPATH, "//*[contains(text(),'Movimentações processuais')]")
             ))
+            pause()
 
             estado_vazio = "Nenhuma movimentação" in logged_in.page_source
             if estado_vazio:
                 pytest.skip("Processo sem movimentações — rótulos de origem não verificáveis")
 
-            # Pelo menos um dos três rótulos deve aparecer dentro de artigos da timeline
             rotulos_nas_entradas = logged_in.find_elements(
                 By.XPATH,
                 "//article[contains(.,'Manual') or contains(.,'Sistema') or contains(.,'DataJud')]"
@@ -197,6 +194,7 @@ class TestLogsDeApiExterna:
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//h1[contains(text(),'Logs de API')]")
         ))
+        pause()
         assert "Logs de API" in logged_in.page_source
 
     def test_subtitulo_de_monitoramento_visivel(self, logged_in, wait):
@@ -204,23 +202,26 @@ class TestLogsDeApiExterna:
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//h1[contains(text(),'Logs de API')]")
         ))
+        pause()
         assert "Integrações externas" in logged_in.page_source
         assert "DataJud"              in logged_in.page_source
 
     def test_tabela_logs_exibe_colunas(self, logged_in, wait):
         logged_in.get(LOGS_URL)
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "table")))
-        assert "Status"    in logged_in.page_source
-        assert "Provedor"  in logged_in.page_source
-        assert "Operação"  in logged_in.page_source
-        assert "Processo"  in logged_in.page_source
-        assert "HTTP"      in logged_in.page_source
-        assert "Erro"      in logged_in.page_source
-        assert "Data"      in logged_in.page_source
+        pause()
+        assert "Status"   in logged_in.page_source
+        assert "Provedor" in logged_in.page_source
+        assert "Operação" in logged_in.page_source
+        assert "Processo" in logged_in.page_source
+        assert "HTTP"     in logged_in.page_source
+        assert "Erro"     in logged_in.page_source
+        assert "Data"     in logged_in.page_source
 
     def test_filtro_status_visivel_com_opcoes(self, logged_in, wait):
         logged_in.get(LOGS_URL)
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "select")))
+        pause()
         sel = Select(logged_in.find_element(By.CSS_SELECTOR, "select"))
         textos = [o.text for o in sel.options]
         assert "Todos os status" in textos
@@ -230,31 +231,41 @@ class TestLogsDeApiExterna:
     def test_filtro_falha_exibe_apenas_erros(self, logged_in, wait):
         logged_in.get(LOGS_URL)
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "select")))
+        pause()
         Select(logged_in.find_element(By.CSS_SELECTOR, "select")).select_by_visible_text("Falha")
+        pause()
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "table")))
+        pause()
         assert (
-            "Falha"                in logged_in.page_source or
+            "Falha"                 in logged_in.page_source or
             "Nenhum log encontrado" in logged_in.page_source
         )
 
     def test_filtro_sucesso_exibe_apenas_ok(self, logged_in, wait):
         logged_in.get(LOGS_URL)
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "select")))
+        pause()
         Select(logged_in.find_element(By.CSS_SELECTOR, "select")).select_by_visible_text("Sucesso")
+        pause()
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "table")))
+        pause()
         assert (
-            "Sucesso"              in logged_in.page_source or
+            "Sucesso"               in logged_in.page_source or
             "Nenhum log encontrado" in logged_in.page_source
         )
 
     def test_filtro_todos_restaura_lista(self, logged_in, wait):
         logged_in.get(LOGS_URL)
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "select")))
+        pause()
         sel = logged_in.find_element(By.CSS_SELECTOR, "select")
         Select(sel).select_by_visible_text("Falha")
+        pause()
         time.sleep(0.3)
         Select(sel).select_by_visible_text("Todos os status")
+        pause()
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "table")))
+        pause()
         assert "Logs de API" in logged_in.page_source
 
     def test_botao_atualizar_recarrega_lista(self, logged_in, wait):
@@ -262,8 +273,10 @@ class TestLogsDeApiExterna:
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(.,'Atualizar')]")
         ))
+        pause()
         logged_in.find_element(By.XPATH, "//button[contains(.,'Atualizar')]").click()
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "table")))
+        pause()
         assert "Logs de API" in logged_in.page_source
 
     def test_botao_sync_todos_processos_visivel(self, logged_in, wait):
@@ -271,6 +284,7 @@ class TestLogsDeApiExterna:
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//button[contains(.,'Sync')]")
         ))
+        pause()
         assert logged_in.find_element(
             By.XPATH, "//button[contains(.,'Sync')]"
         ).is_displayed()
@@ -281,14 +295,14 @@ class TestLogsDeApiExterna:
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(.,'Sync')]")
         ))
+        pause()
         logged_in.find_element(By.XPATH, "//button[contains(.,'Sync')]").click()
-        # Aguarda strings que SÓ aparecem após o sync concluir
-        # (evita false-positive com "Falha" e "Sucesso" que já existem no dropdown)
         wait.until(lambda d: (
             "Sincronização concluída" in d.page_source or
             "Falha ao sincronizar"    in d.page_source or
             "Último sync em lote"     in d.page_source
         ))
+        pause()
         assert (
             "Sincronização concluída" in logged_in.page_source or
             "Falha ao sincronizar"    in logged_in.page_source or
@@ -299,6 +313,7 @@ class TestLogsDeApiExterna:
         """Quando não há logs, exibe mensagem adequada (não falha silenciosamente)."""
         logged_in.get(LOGS_URL)
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "table")))
+        pause()
         assert (
             "Nenhum log encontrado" in logged_in.page_source or
             "Sucesso"               in logged_in.page_source or
@@ -308,7 +323,8 @@ class TestLogsDeApiExterna:
     def test_rodape_exibe_contagem_de_logs(self, logged_in, wait):
         logged_in.get(LOGS_URL)
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "table")))
+        pause()
         assert (
-            "log(s)"               in logged_in.page_source or
+            "log(s)"                in logged_in.page_source or
             "Nenhum log encontrado" in logged_in.page_source
         )

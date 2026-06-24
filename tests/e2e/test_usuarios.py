@@ -4,7 +4,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.select import Select
 
-from conftest import BASE_URL
+from conftest import BASE_URL, pause
 
 USUARIOS_URL = f"{BASE_URL}/sistema/usuarios"
 
@@ -17,17 +17,19 @@ class TestGerenciarUsuarios:
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//h1[contains(text(),'Gerenciar Usuários')]")
         ))
+        pause()
         assert "Gerenciar Usuários" in logged_in.page_source
 
     def test_tabela_usuarios_visivel(self, logged_in, wait):
         logged_in.get(USUARIOS_URL)
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "table")))
+        pause()
 
         tabela = logged_in.find_element(By.CSS_SELECTOR, "table")
         assert tabela.is_displayed()
-        assert "Nome" in logged_in.page_source
+        assert "Nome"   in logged_in.page_source
         assert "E-mail" in logged_in.page_source
-        assert "Papel" in logged_in.page_source
+        assert "Papel"  in logged_in.page_source
         assert "Status" in logged_in.page_source
 
     def test_botao_novo_usuario_abre_modal(self, logged_in, wait):
@@ -35,11 +37,13 @@ class TestGerenciarUsuarios:
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(., 'Novo Usuário')]")
         ))
+        pause()
         logged_in.find_element(By.XPATH, "//button[contains(., 'Novo Usuário')]").click()
 
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//*[contains(text(),'Novo Usuário')]")
         ))
+        pause()
         assert logged_in.find_element(By.CSS_SELECTOR, "input[placeholder='Ex: Ana Lima']").is_displayed()
         assert logged_in.find_element(By.CSS_SELECTOR, "input[placeholder='exemplo@escritorio.com']").is_displayed()
 
@@ -50,13 +54,17 @@ class TestGerenciarUsuarios:
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(., 'Novo Usuário')]")
         ))
+        pause()
         logged_in.find_element(By.XPATH, "//button[contains(., 'Novo Usuário')]").click()
 
         wait.until(EC.presence_of_element_located(
             (By.CSS_SELECTOR, "input[placeholder='Ex: Ana Lima']")
         ))
+        pause()
         logged_in.find_element(By.CSS_SELECTOR, "input[placeholder='Ex: Ana Lima']").send_keys("Usuário Selenium")
+        pause()
         logged_in.find_element(By.CSS_SELECTOR, "input[placeholder='exemplo@escritorio.com']").send_keys(email_unico)
+        pause()
 
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(., 'Salvar')]")
@@ -66,6 +74,7 @@ class TestGerenciarUsuarios:
         wait.until(EC.presence_of_element_located(
             (By.XPATH, f"//*[contains(text(),'{email_unico}')]")
         ))
+        pause()
         assert email_unico in logged_in.page_source
 
     def test_modal_novo_usuario_cancela(self, logged_in, wait):
@@ -73,62 +82,74 @@ class TestGerenciarUsuarios:
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(., 'Novo Usuário')]")
         ))
+        pause()
         logged_in.find_element(By.XPATH, "//button[contains(., 'Novo Usuário')]").click()
 
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(text(),'Cancelar')]")
         ))
+        pause()
         logged_in.find_element(By.XPATH, "//button[contains(text(),'Cancelar')]").click()
 
         wait.until(EC.invisibility_of_element_located(
             (By.CSS_SELECTOR, "input[placeholder='Ex: Ana Lima']")
         ))
+        pause()
 
     def test_visualizar_usuario_abre_modal(self, logged_in, wait):
         logged_in.get(USUARIOS_URL)
         wait.until(EC.presence_of_element_located(
             (By.CSS_SELECTOR, "button[title='Visualizar']")
         ))
+        pause()
         logged_in.find_element(By.CSS_SELECTOR, "button[title='Visualizar']").click()
 
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//*[contains(text(),'Visualizar Usuário')]")
         ))
+        pause()
         assert "Visualizar Usuário" in logged_in.page_source
 
         logged_in.find_element(By.CSS_SELECTOR, "button[aria-label='Fechar']").click()
+        pause()
 
     def test_editar_usuario_abre_modal(self, logged_in, wait):
         logged_in.get(USUARIOS_URL)
         wait.until(EC.presence_of_element_located(
             (By.CSS_SELECTOR, "button[title='Editar']")
         ))
+        pause()
         logged_in.find_element(By.CSS_SELECTOR, "button[title='Editar']").click()
 
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//*[contains(text(),'Editar Usuário')]")
         ))
+        pause()
         assert "Editar Usuário" in logged_in.page_source
         assert logged_in.find_element(By.CSS_SELECTOR, "input[placeholder='Ex: Ana Lima']").is_displayed()
 
         logged_in.find_element(By.CSS_SELECTOR, "button[aria-label='Fechar']").click()
+        pause()
 
     def test_desativar_usuario_abre_confirmacao(self, logged_in, wait):
         logged_in.get(USUARIOS_URL)
         wait.until(EC.presence_of_element_located(
             (By.CSS_SELECTOR, "button[title='Desativar']")
         ))
+        pause()
         logged_in.find_element(By.CSS_SELECTOR, "button[title='Desativar']").click()
 
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//*[contains(text(),'Desativar Usuário')]")
         ))
+        pause()
         assert "perderá acesso ao sistema" in logged_in.page_source
 
         logged_in.find_element(By.XPATH, "//button[contains(text(),'Cancelar')]").click()
         wait.until(EC.invisibility_of_element_located(
             (By.XPATH, "//*[contains(text(),'Desativar Usuário')]")
         ))
+        pause()
 
 
 class TestRegistrosAuditoria:
@@ -139,11 +160,13 @@ class TestRegistrosAuditoria:
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(text(),'Registros')]")
         ))
+        pause()
         logged_in.find_element(By.XPATH, "//button[contains(text(),'Registros')]").click()
 
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//h1[contains(text(),'Registros')]")
         ))
+        pause()
         assert "Registros" in logged_in.page_source
 
     def test_registros_exibem_acoes_de_usuario(self, logged_in, wait):
@@ -151,11 +174,13 @@ class TestRegistrosAuditoria:
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(text(),'Registros')]")
         ))
+        pause()
         logged_in.find_element(By.XPATH, "//button[contains(text(),'Registros')]").click()
 
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//h1[contains(text(),'Registros')]")
         ))
+        pause()
         assert "Criação de Usuário" in logged_in.page_source or "Nenhum registro encontrado" in logged_in.page_source
 
     def test_filtro_acao_funciona(self, logged_in, wait):
@@ -163,14 +188,18 @@ class TestRegistrosAuditoria:
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(text(),'Registros')]")
         ))
+        pause()
         logged_in.find_element(By.XPATH, "//button[contains(text(),'Registros')]").click()
 
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "select")))
+        pause()
         Select(logged_in.find_element(By.CSS_SELECTOR, "select")).select_by_visible_text("Criação de Usuário")
+        pause()
 
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//h1[contains(text(),'Registros')]")
         ))
+        pause()
         assert logged_in.find_element(By.CSS_SELECTOR, "select").is_displayed()
 
     def test_voltar_aos_usuarios_da_aba_registros(self, logged_in, wait):
@@ -178,14 +207,17 @@ class TestRegistrosAuditoria:
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(text(),'Registros')]")
         ))
+        pause()
         logged_in.find_element(By.XPATH, "//button[contains(text(),'Registros')]").click()
 
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(., 'Voltar aos Usuários')]")
         ))
+        pause()
         logged_in.find_element(By.XPATH, "//button[contains(., 'Voltar aos Usuários')]").click()
 
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//h1[contains(text(),'Gerenciar Usuários')]")
         ))
+        pause()
         assert "Gerenciar Usuários" in logged_in.page_source

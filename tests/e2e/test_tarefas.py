@@ -5,7 +5,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support.select import Select
 
-from conftest import BASE_URL
+from conftest import BASE_URL, pause
 
 TAREFAS_URL = f"{BASE_URL}/sistema/tarefas"
 
@@ -73,6 +73,7 @@ class TestCriarTarefa:
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//h1[contains(text(),'Tarefas')]")
         ))
+        pause()
         assert "Tarefas" in logged_in.page_source
 
     def test_subtitulo_e_eyebrow_visiveis(self, logged_in, wait):
@@ -80,6 +81,7 @@ class TestCriarTarefa:
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//h1[contains(text(),'Tarefas')]")
         ))
+        pause()
         assert "Organização operacional"                   in logged_in.page_source
         assert "Acompanhe o trabalho do escritório"        in logged_in.page_source
 
@@ -88,6 +90,7 @@ class TestCriarTarefa:
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//h1[contains(text(),'Tarefas')]")
         ))
+        pause()
         assert "Tarefas cadastradas"       in logged_in.page_source
         assert "Em aberto"                 in logged_in.page_source
         assert "Prioridade alta"           in logged_in.page_source
@@ -98,6 +101,7 @@ class TestCriarTarefa:
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//h1[contains(text(),'Tarefas')]")
         ))
+        pause()
         assert "Filtrar quadro"            in logged_in.page_source
         assert "Todos os responsáveis"     in logged_in.page_source
         assert "Todos os clientes"         in logged_in.page_source
@@ -108,6 +112,7 @@ class TestCriarTarefa:
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(.,'Nova tarefa')]")
         ))
+        pause()
         assert logged_in.find_element(
             By.XPATH, "//button[contains(.,'Nova tarefa')]"
         ).is_displayed()
@@ -117,10 +122,12 @@ class TestCriarTarefa:
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(.,'Nova tarefa')]")
         ))
+        pause()
         logged_in.find_element(By.XPATH, "//button[contains(.,'Nova tarefa')]").click()
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//*[contains(text(),'Criar tarefa')]")
         ))
+        pause()
         assert "Criar tarefa" in logged_in.page_source
 
     def test_modal_exibe_campo_titulo_obrigatorio(self, logged_in, wait):
@@ -128,10 +135,12 @@ class TestCriarTarefa:
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(.,'Nova tarefa')]")
         ))
+        pause()
         logged_in.find_element(By.XPATH, "//button[contains(.,'Nova tarefa')]").click()
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//*[contains(text(),'Título')]")
         ))
+        pause()
         campo = logged_in.find_element(
             By.XPATH,
             "//span[contains(text(),'Título')]/following-sibling::input"
@@ -139,29 +148,35 @@ class TestCriarTarefa:
         )
         assert campo.get_attribute("required") is not None or campo.is_displayed()
         logged_in.find_element(By.XPATH, "//button[contains(text(),'Cancelar')]").click()
+        pause()
 
     def test_modal_exibe_campo_descricao(self, logged_in, wait):
         logged_in.get(TAREFAS_URL)
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(.,'Nova tarefa')]")
         ))
+        pause()
         logged_in.find_element(By.XPATH, "//button[contains(.,'Nova tarefa')]").click()
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//*[contains(text(),'Descrição')]")
         ))
+        pause()
         assert "Descrição" in logged_in.page_source
         assert logged_in.find_element(By.CSS_SELECTOR, "textarea").is_displayed()
         logged_in.find_element(By.XPATH, "//button[contains(text(),'Cancelar')]").click()
+        pause()
 
     def test_modal_select_prioridade_lista_baixa_media_alta(self, logged_in, wait):
         logged_in.get(TAREFAS_URL)
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(.,'Nova tarefa')]")
         ))
+        pause()
         logged_in.find_element(By.XPATH, "//button[contains(.,'Nova tarefa')]").click()
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//*[contains(text(),'Prioridade')]")
         ))
+        pause()
         sel = Select(logged_in.find_element(
             By.XPATH, "//select[.//option[contains(text(),'Média')]]"
         ))
@@ -170,78 +185,94 @@ class TestCriarTarefa:
         assert "Média"  in textos
         assert "Alta"   in textos
         logged_in.find_element(By.XPATH, "//button[contains(text(),'Cancelar')]").click()
+        pause()
 
     def test_modal_exibe_campo_vencimento_datetime(self, logged_in, wait):
         logged_in.get(TAREFAS_URL)
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(.,'Nova tarefa')]")
         ))
+        pause()
         logged_in.find_element(By.XPATH, "//button[contains(.,'Nova tarefa')]").click()
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//*[contains(text(),'Vencimento')]")
         ))
+        pause()
         campo = logged_in.find_element(By.CSS_SELECTOR, "input[type='datetime-local']")
         assert campo.is_displayed()
         logged_in.find_element(By.XPATH, "//button[contains(text(),'Cancelar')]").click()
+        pause()
 
     def test_modal_select_responsavel_tem_sem_responsavel(self, logged_in, wait):
         logged_in.get(TAREFAS_URL)
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(.,'Nova tarefa')]")
         ))
+        pause()
         logged_in.find_element(By.XPATH, "//button[contains(.,'Nova tarefa')]").click()
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//*[contains(text(),'Responsável')]")
         ))
+        pause()
         sel = Select(logged_in.find_element(
             By.XPATH, "//select[.//option[contains(text(),'Sem responsável')]]"
         ))
         assert "Sem responsável" in [o.text for o in sel.options]
         logged_in.find_element(By.XPATH, "//button[contains(text(),'Cancelar')]").click()
+        pause()
 
     def test_modal_select_cliente_vinculado_tem_nenhum_cliente(self, logged_in, wait):
         logged_in.get(TAREFAS_URL)
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(.,'Nova tarefa')]")
         ))
+        pause()
         logged_in.find_element(By.XPATH, "//button[contains(.,'Nova tarefa')]").click()
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//*[contains(text(),'Cliente vinculado')]")
         ))
+        pause()
         sel = Select(logged_in.find_element(
             By.XPATH, "//select[.//option[contains(text(),'Nenhum cliente')]]"
         ))
         assert "Nenhum cliente" in [o.text for o in sel.options]
         logged_in.find_element(By.XPATH, "//button[contains(text(),'Cancelar')]").click()
+        pause()
 
     def test_modal_select_processo_vinculado_tem_nenhum_processo(self, logged_in, wait):
         logged_in.get(TAREFAS_URL)
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(.,'Nova tarefa')]")
         ))
+        pause()
         logged_in.find_element(By.XPATH, "//button[contains(.,'Nova tarefa')]").click()
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//*[contains(text(),'Processo vinculado')]")
         ))
+        pause()
         sel = Select(logged_in.find_element(
             By.XPATH, "//select[.//option[contains(text(),'Nenhum processo')]]"
         ))
         assert "Nenhum processo" in [o.text for o in sel.options]
         logged_in.find_element(By.XPATH, "//button[contains(text(),'Cancelar')]").click()
+        pause()
 
     def test_cancelar_fecha_modal_criar_tarefa(self, logged_in, wait):
         logged_in.get(TAREFAS_URL)
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(.,'Nova tarefa')]")
         ))
+        pause()
         logged_in.find_element(By.XPATH, "//button[contains(.,'Nova tarefa')]").click()
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(text(),'Cancelar')]")
         ))
+        pause()
         logged_in.find_element(By.XPATH, "//button[contains(text(),'Cancelar')]").click()
         wait.until(EC.invisibility_of_element_located(
             (By.XPATH, "//*[contains(text(),'Criar tarefa') and not(self::button)]")
         ))
+        pause()
 
     def test_criar_tarefa_simples_aparece_na_coluna_a_fazer(self, logged_in, wait):
         titulo_unico = f"Tarefa Selenium {int(time.time())}"
@@ -250,10 +281,12 @@ class TestCriarTarefa:
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(.,'Nova tarefa')]")
         ))
+        pause()
         logged_in.find_element(By.XPATH, "//button[contains(.,'Nova tarefa')]").click()
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//*[contains(text(),'Criar tarefa')]")
         ))
+        pause()
 
         campo_titulo = logged_in.find_element(
             By.XPATH,
@@ -262,6 +295,7 @@ class TestCriarTarefa:
         )
         campo_titulo.clear()
         campo_titulo.send_keys(titulo_unico)
+        pause()
 
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[@type='submit' and contains(text(),'Criar tarefa')]")
@@ -273,6 +307,7 @@ class TestCriarTarefa:
         wait.until(EC.presence_of_element_located(
             (By.XPATH, f"//*[contains(text(),'{titulo_unico}')]")
         ))
+        pause()
         assert titulo_unico in logged_in.page_source
 
     def test_criar_tarefa_com_prioridade_alta(self, logged_in, wait):
@@ -282,10 +317,12 @@ class TestCriarTarefa:
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(.,'Nova tarefa')]")
         ))
+        pause()
         logged_in.find_element(By.XPATH, "//button[contains(.,'Nova tarefa')]").click()
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//*[contains(text(),'Criar tarefa')]")
         ))
+        pause()
 
         campo_titulo = logged_in.find_element(
             By.XPATH,
@@ -293,10 +330,12 @@ class TestCriarTarefa:
             " | //span[contains(text(),'Título')]/following-sibling::input",
         )
         campo_titulo.send_keys(titulo_unico)
+        pause()
 
         Select(logged_in.find_element(
             By.XPATH, "//select[.//option[contains(text(),'Média')]]"
         )).select_by_visible_text("Alta")
+        pause()
 
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[@type='submit' and contains(text(),'Criar tarefa')]")
@@ -308,6 +347,7 @@ class TestCriarTarefa:
         wait.until(EC.presence_of_element_located(
             (By.XPATH, f"//*[contains(text(),'{titulo_unico}')]")
         ))
+        pause()
         assert titulo_unico in logged_in.page_source
         # Badge "Alta" deve aparecer no card criado
         assert "Alta" in logged_in.page_source
@@ -320,10 +360,12 @@ class TestCriarTarefa:
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(.,'Nova tarefa')]")
         ))
+        pause()
         logged_in.find_element(By.XPATH, "//button[contains(.,'Nova tarefa')]").click()
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//*[contains(text(),'Criar tarefa')]")
         ))
+        pause()
 
         campo_titulo = logged_in.find_element(
             By.XPATH,
@@ -331,8 +373,10 @@ class TestCriarTarefa:
             " | //span[contains(text(),'Título')]/following-sibling::input",
         )
         campo_titulo.send_keys(titulo_unico)
+        pause()
 
         logged_in.find_element(By.CSS_SELECTOR, "textarea").send_keys(descricao)
+        pause()
 
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[@type='submit' and contains(text(),'Criar tarefa')]")
@@ -344,6 +388,7 @@ class TestCriarTarefa:
         wait.until(EC.presence_of_element_located(
             (By.XPATH, f"//*[contains(text(),'{titulo_unico}')]")
         ))
+        pause()
         assert titulo_unico in logged_in.page_source
         assert descricao     in logged_in.page_source
 
@@ -355,10 +400,12 @@ class TestCriarTarefa:
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(.,'Nova tarefa')]")
         ))
+        pause()
         logged_in.find_element(By.XPATH, "//button[contains(.,'Nova tarefa')]").click()
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//*[contains(text(),'Criar tarefa')]")
         ))
+        pause()
 
         campo_titulo = logged_in.find_element(
             By.XPATH,
@@ -366,6 +413,7 @@ class TestCriarTarefa:
             " | //span[contains(text(),'Título')]/following-sibling::input",
         )
         campo_titulo.send_keys(titulo_unico)
+        pause()
 
         # Mantém cliente e processo como "Nenhum" (default)
         assert Select(logged_in.find_element(
@@ -382,6 +430,7 @@ class TestCriarTarefa:
         wait.until(EC.presence_of_element_located(
             (By.XPATH, f"//*[contains(text(),'{titulo_unico}')]")
         ))
+        pause()
         assert titulo_unico in logged_in.page_source
 
 
@@ -393,6 +442,7 @@ class TestQuadroKanban:
     def test_quadro_tem_aria_label_quadro_de_tarefas(self, logged_in, wait):
         logged_in.get(TAREFAS_URL)
         _aguardar_board(logged_in, wait)
+        pause()
         board = logged_in.find_element(
             By.CSS_SELECTOR, "section[aria-label='Quadro de tarefas']"
         )
@@ -401,12 +451,14 @@ class TestQuadroKanban:
     def test_quadro_exibe_quatro_colunas_kanban(self, logged_in, wait):
         logged_in.get(TAREFAS_URL)
         _aguardar_board(logged_in, wait)
+        pause()
         for coluna in ("A fazer", "Em andamento", "Bloqueadas", "Concluídas"):
             assert coluna in logged_in.page_source
 
     def test_colunas_exibem_total_de_tarefas(self, logged_in, wait):
         logged_in.get(TAREFAS_URL)
         _aguardar_board(logged_in, wait)
+        pause()
         # Cada coluna tem um <span> com o total numérico ao lado do h2
         colunas_headers = logged_in.find_elements(
             By.XPATH,
@@ -419,6 +471,7 @@ class TestQuadroKanban:
         _aguardar_board(logged_in, wait)
         # Aguarda o carregamento terminar
         time.sleep(1)
+        pause()
         # Ao menos uma coluna pode estar vazia (estado válido)
         assert (
             "Nenhuma tarefa nesta etapa." in logged_in.page_source or
@@ -429,6 +482,7 @@ class TestQuadroKanban:
         logged_in.get(TAREFAS_URL)
         _aguardar_board(logged_in, wait)
         time.sleep(1)
+        pause()
         try:
             card = logged_in.find_element(By.XPATH, "//article")
             # text-transform: uppercase no CSS faz o Selenium ler "MÉDIA" em vez de "Média"
@@ -446,6 +500,7 @@ class TestQuadroKanban:
         logged_in.get(TAREFAS_URL)
         _aguardar_board(logged_in, wait)
         time.sleep(1)
+        pause()
         try:
             card = logged_in.find_element(By.XPATH, "//article")
             assert (
@@ -472,6 +527,7 @@ class TestQuadroKanban:
         logged_in.get(TAREFAS_URL)
         _aguardar_board(logged_in, wait)
         time.sleep(1)
+        pause()
         try:
             card = logged_in.find_element(By.XPATH, "//article")
             assert (
@@ -485,6 +541,7 @@ class TestQuadroKanban:
         logged_in.get(TAREFAS_URL)
         _aguardar_board(logged_in, wait)
         time.sleep(1)
+        pause()
         try:
             card = logged_in.find_element(By.XPATH, "//article")
             assert card.find_element(
@@ -500,6 +557,7 @@ class TestQuadroKanban:
         logged_in.get(TAREFAS_URL)
         _aguardar_board(logged_in, wait)
         time.sleep(1)
+        pause()
         try:
             btn_voltar = logged_in.find_element(
                 By.XPATH,
@@ -514,6 +572,7 @@ class TestQuadroKanban:
         logged_in.get(TAREFAS_URL)
         _aguardar_board(logged_in, wait)
         time.sleep(1)
+        pause()
         try:
             btn_avancar = logged_in.find_element(
                 By.XPATH,
@@ -532,22 +591,26 @@ class TestQuadroKanban:
         # 1. Cria a tarefa
         logged_in.get(TAREFAS_URL)
         _aguardar_board(logged_in, wait)
+        pause()
         logged_in.find_element(By.XPATH, "//button[contains(.,'Nova tarefa')]").click()
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//*[contains(text(),'Criar tarefa')]")
         ))
+        pause()
         campo = logged_in.find_element(
             By.XPATH,
             "//label[.//span[contains(text(),'Título')]]//input"
             " | //span[contains(text(),'Título')]/following-sibling::input",
         )
         campo.send_keys(titulo_unico)
+        pause()
         logged_in.find_element(
             By.XPATH, "//button[@type='submit' and contains(text(),'Criar tarefa')]"
         ).click()
         wait.until(EC.presence_of_element_located(
             (By.XPATH, f"//h3[contains(text(),'{titulo_unico}')]")
         ))
+        pause()
 
         # 2–4. Move a tarefa até Concluídas (3 cliques em Mover para próxima etapa)
         for etapa_destino in ("em andamento", "bloqueadas", "conclu"):
@@ -566,10 +629,12 @@ class TestQuadroKanban:
                 e in d.page_source.lower() or
                 "movida para" in d.page_source.lower()
             ))
+            pause()
             # Aguarda o card reaparecer após o reload do board
             wait.until(EC.presence_of_element_located(
                 (By.XPATH, f"//h3[contains(text(),'{titulo_unico}')]")
             ))
+            pause()
 
         # 5. Verifica que o botão de avançar está desabilitado na coluna Concluídas
         btn_avancar = logged_in.find_element(
@@ -584,6 +649,7 @@ class TestQuadroKanban:
         logged_in.get(TAREFAS_URL)
         _aguardar_board(logged_in, wait)
         time.sleep(1)
+        pause()
         try:
             btn_avancar = logged_in.find_element(
                 By.XPATH,
@@ -592,6 +658,7 @@ class TestQuadroKanban:
             )
             scroll_and_click(logged_in, btn_avancar)
             wait.until(lambda d: "movida para" in d.page_source)
+            pause()
             assert "movida para" in logged_in.page_source
         except NoSuchElementException:
             pytest.skip("Nenhuma tarefa disponível em 'A fazer'")
@@ -600,6 +667,7 @@ class TestQuadroKanban:
         logged_in.get(TAREFAS_URL)
         _aguardar_board(logged_in, wait)
         time.sleep(1)
+        pause()
         try:
             btn_editar = logged_in.find_element(
                 By.CSS_SELECTOR, "button[aria-label='Editar tarefa']"
@@ -608,9 +676,11 @@ class TestQuadroKanban:
             wait.until(EC.presence_of_element_located(
                 (By.XPATH, "//*[contains(text(),'Editar tarefa')]")
             ))
+            pause()
             assert "Editar tarefa" in logged_in.page_source
             assert "Salvar alterações" in logged_in.page_source
             logged_in.find_element(By.XPATH, "//button[contains(text(),'Cancelar')]").click()
+            pause()
         except NoSuchElementException:
             pytest.skip("Nenhuma tarefa disponível no quadro")
 
@@ -619,6 +689,7 @@ class TestQuadroKanban:
         logged_in.get(TAREFAS_URL)
         _aguardar_board(logged_in, wait)
         time.sleep(1)
+        pause()
         try:
             btn_editar = logged_in.find_element(
                 By.CSS_SELECTOR, "button[aria-label='Editar tarefa']"
@@ -627,6 +698,7 @@ class TestQuadroKanban:
             wait.until(EC.presence_of_element_located(
                 (By.XPATH, "//*[contains(text(),'Editar tarefa')]")
             ))
+            pause()
             campo_titulo = logged_in.find_element(
                 By.XPATH,
                 "//label[.//span[contains(text(),'Título')]]//input"
@@ -634,6 +706,7 @@ class TestQuadroKanban:
             )
             campo_titulo.clear()
             campo_titulo.send_keys(titulo_novo)
+            pause()
 
             wait.until(EC.element_to_be_clickable(
                 (By.XPATH, "//button[@type='submit' and contains(text(),'Salvar alterações')]")
@@ -645,6 +718,7 @@ class TestQuadroKanban:
             wait.until(EC.presence_of_element_located(
                 (By.XPATH, f"//*[contains(text(),'{titulo_novo}')]")
             ))
+            pause()
             assert titulo_novo in logged_in.page_source
         except NoSuchElementException:
             pytest.skip("Nenhuma tarefa disponível no quadro")
@@ -653,6 +727,7 @@ class TestQuadroKanban:
         logged_in.get(TAREFAS_URL)
         _aguardar_board(logged_in, wait)
         time.sleep(1)
+        pause()
         try:
             btn_excluir = logged_in.find_element(
                 By.CSS_SELECTOR, "button[aria-label='Excluir tarefa']"
@@ -661,12 +736,14 @@ class TestQuadroKanban:
             wait.until(EC.presence_of_element_located(
                 (By.XPATH, "//*[contains(text(),'Excluir tarefa')]")
             ))
+            pause()
             assert "A tarefa será removida do quadro" in logged_in.page_source
             # Fecha sem confirmar
             logged_in.find_element(By.XPATH, "//button[contains(text(),'Cancelar')]").click()
             wait.until(EC.invisibility_of_element_located(
                 (By.XPATH, "//*[contains(text(),'A tarefa será removida')]")
             ))
+            pause()
         except NoSuchElementException:
             pytest.skip("Nenhuma tarefa disponível no quadro")
 
@@ -678,22 +755,26 @@ class TestQuadroKanban:
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(.,'Nova tarefa')]")
         ))
+        pause()
         logged_in.find_element(By.XPATH, "//button[contains(.,'Nova tarefa')]").click()
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//*[contains(text(),'Criar tarefa')]")
         ))
+        pause()
         campo = logged_in.find_element(
             By.XPATH,
             "//label[.//span[contains(text(),'Título')]]//input"
             " | //span[contains(text(),'Título')]/following-sibling::input",
         )
         campo.send_keys(titulo_unico)
+        pause()
         logged_in.find_element(
             By.XPATH, "//button[@type='submit' and contains(text(),'Criar tarefa')]"
         ).click()
         wait.until(EC.presence_of_element_located(
             (By.XPATH, f"//*[contains(text(),'{titulo_unico}')]")
         ))
+        pause()
 
         # Exclui a tarefa recém-criada
         btn_excluir = logged_in.find_element(
@@ -706,6 +787,7 @@ class TestQuadroKanban:
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(text(),'Excluir tarefa') and not(@type='submit') or @type='button' and contains(text(),'Excluir tarefa')]")
         ))
+        pause()
         # Clica no botão de confirmação "Excluir tarefa" dentro do modal de exclusão
         btns_excluir = logged_in.find_elements(
             By.XPATH, "//button[contains(text(),'Excluir tarefa')]"
@@ -718,6 +800,7 @@ class TestQuadroKanban:
         if btn_confirmar:
             js_click(logged_in, btn_confirmar)
             wait.until(lambda d: titulo_unico not in d.page_source)
+            pause()
             assert titulo_unico not in logged_in.page_source
         else:
             pytest.skip("Botão de confirmação de exclusão não encontrado")
@@ -728,15 +811,18 @@ class TestQuadroKanban:
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(.,'Atualizar')]")
         ))
+        pause()
         logged_in.find_element(By.XPATH, "//button[contains(.,'Atualizar')]").click()
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//h2[text()='A fazer']")
         ))
+        pause()
         assert "Tarefas" in logged_in.page_source
 
     def test_filtro_responsavel_exibe_limpar_filtros(self, logged_in, wait):
         logged_in.get(TAREFAS_URL)
         _aguardar_board(logged_in, wait)
+        pause()
         filtros = _section_filtros(logged_in)
         selects = filtros.find_elements(By.TAG_NAME, "select")
         # Primeiro select: responsáveis
@@ -744,9 +830,11 @@ class TestQuadroKanban:
         if len(sel_responsavel.options) <= 1:
             pytest.skip("Nenhum responsável disponível para filtrar")
         sel_responsavel.select_by_index(1)
+        pause()
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//button[contains(text(),'Limpar filtros')]")
         ))
+        pause()
         assert "Limpar filtros" in logged_in.page_source
         # Limpa o filtro
         logged_in.find_element(
@@ -755,10 +843,12 @@ class TestQuadroKanban:
         wait.until(EC.invisibility_of_element_located(
             (By.XPATH, "//button[contains(text(),'Limpar filtros')]")
         ))
+        pause()
 
     def test_filtro_cliente_filtra_quadro(self, logged_in, wait):
         logged_in.get(TAREFAS_URL)
         _aguardar_board(logged_in, wait)
+        pause()
         filtros = _section_filtros(logged_in)
         selects = filtros.find_elements(By.TAG_NAME, "select")
         # Segundo select: clientes
@@ -766,18 +856,22 @@ class TestQuadroKanban:
         if len(sel_cliente.options) <= 1:
             pytest.skip("Nenhum cliente disponível para filtrar")
         sel_cliente.select_by_index(1)
+        pause()
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//button[contains(text(),'Limpar filtros')]")
         ))
+        pause()
         assert "Limpar filtros" in logged_in.page_source
         logged_in.find_element(
             By.XPATH, "//button[contains(text(),'Limpar filtros')]"
         ).click()
+        pause()
 
     def test_card_vinculo_processo_exibe_label_processo_vinculado(self, logged_in, wait):
         logged_in.get(TAREFAS_URL)
         _aguardar_board(logged_in, wait)
         time.sleep(1)
+        pause()
         cards_com_processo = logged_in.find_elements(
             By.XPATH, "//article[contains(.,'Processo vinculado')]"
         )
