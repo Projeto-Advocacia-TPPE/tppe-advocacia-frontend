@@ -4,7 +4,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
 
-from conftest import BASE_URL, do_login, do_logout
+from conftest import BASE_URL, do_login, do_logout, pause
 
 CLIENTES_URL = f"{BASE_URL}/sistema/clientes"
 SITE_URL     = BASE_URL
@@ -28,6 +28,7 @@ def _abrir_ficha_360(driver, wait):
     wait.until(EC.presence_of_element_located(
         (By.XPATH, "//*[contains(text(),'Ficha 360 do cliente')]")
     ))
+    pause()
 
 
 def _abrir_modal_anonimizar(driver, wait):
@@ -38,6 +39,7 @@ def _abrir_modal_anonimizar(driver, wait):
     wait.until(EC.presence_of_element_located(
         (By.XPATH, "//*[contains(text(),'Anonimizar cliente pela LGPD')]")
     ))
+    pause()
 
 
 def _campo_confirmacao(driver):
@@ -59,107 +61,126 @@ class TestTermoConsentimento:
     def test_botao_termo_consentimento_visivel_no_formulario(self, driver, wait):
         driver.get(SITE_URL)
         wait.until(EC.presence_of_element_located((By.ID, "contato")))
+        pause()
         termo_btn = driver.find_element(By.XPATH, "//button[contains(text(),'Termo de Consentimento')]")
         assert termo_btn.is_displayed()
 
     def test_clicar_termo_abre_modal(self, driver, wait):
         driver.get(SITE_URL)
         wait.until(EC.presence_of_element_located((By.ID, "contato")))
+        pause()
         scroll_and_click(driver, driver.find_element(
             By.XPATH, "//button[contains(text(),'Termo de Consentimento')]"
         ))
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//*[contains(text(),'Termo de Consentimento para Tratamento de Dados Pessoais')]")
         ))
+        pause()
         assert "Termo de Consentimento para Tratamento de Dados Pessoais" in driver.page_source
 
     def test_modal_termo_exibe_referencia_a_lgpd(self, driver, wait):
         driver.get(SITE_URL)
         wait.until(EC.presence_of_element_located((By.ID, "contato")))
+        pause()
         scroll_and_click(driver, driver.find_element(
             By.XPATH, "//button[contains(text(),'Termo de Consentimento')]"
         ))
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//*[contains(text(),'Lei Geral de Proteção de Dados')]")
         ))
+        pause()
         assert "Lei Geral de Proteção de Dados" in driver.page_source
         assert "LGPD" in driver.page_source
 
     def test_modal_termo_exibe_secao_controlador_dos_dados(self, driver, wait):
         driver.get(SITE_URL)
         wait.until(EC.presence_of_element_located((By.ID, "contato")))
+        pause()
         scroll_and_click(driver, driver.find_element(
             By.XPATH, "//button[contains(text(),'Termo de Consentimento')]"
         ))
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//*[contains(text(),'Controlador dos dados')]")
         ))
+        pause()
         assert "Controlador dos dados" in driver.page_source
 
     def test_modal_termo_exibe_secao_dados_coletados(self, driver, wait):
         driver.get(SITE_URL)
         wait.until(EC.presence_of_element_located((By.ID, "contato")))
+        pause()
         scroll_and_click(driver, driver.find_element(
             By.XPATH, "//button[contains(text(),'Termo de Consentimento')]"
         ))
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//*[contains(text(),'Dados coletados')]")
         ))
+        pause()
         assert "Dados coletados" in driver.page_source
 
     def test_modal_termo_exibe_secao_finalidade_do_tratamento(self, driver, wait):
         driver.get(SITE_URL)
         wait.until(EC.presence_of_element_located((By.ID, "contato")))
+        pause()
         scroll_and_click(driver, driver.find_element(
             By.XPATH, "//button[contains(text(),'Termo de Consentimento')]"
         ))
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//*[contains(text(),'Finalidade do tratamento')]")
         ))
+        pause()
         assert "Finalidade do tratamento" in driver.page_source
 
     def test_modal_termo_exibe_secao_base_legal(self, driver, wait):
         driver.get(SITE_URL)
         wait.until(EC.presence_of_element_located((By.ID, "contato")))
+        pause()
         scroll_and_click(driver, driver.find_element(
             By.XPATH, "//button[contains(text(),'Termo de Consentimento')]"
         ))
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//*[contains(text(),'Base legal')]")
         ))
+        pause()
         assert "Base legal" in driver.page_source
 
     def test_modal_termo_exibe_secao_prazo_de_retencao(self, driver, wait):
         driver.get(SITE_URL)
         wait.until(EC.presence_of_element_located((By.ID, "contato")))
+        pause()
         scroll_and_click(driver, driver.find_element(
             By.XPATH, "//button[contains(text(),'Termo de Consentimento')]"
         ))
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//*[contains(text(),'Prazo de retenção')]")
         ))
+        pause()
         assert "Prazo de retenção" in driver.page_source
 
     def test_modal_termo_exibe_secao_direitos_do_titular(self, driver, wait):
         driver.get(SITE_URL)
         wait.until(EC.presence_of_element_located((By.ID, "contato")))
+        pause()
         scroll_and_click(driver, driver.find_element(
             By.XPATH, "//button[contains(text(),'Termo de Consentimento')]"
         ))
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//*[contains(text(),'direitos como titular')]")
         ))
+        pause()
         assert "direitos como titular" in driver.page_source
 
     def test_modal_termo_tem_botao_aceitar(self, driver, wait):
         driver.get(SITE_URL)
         wait.until(EC.presence_of_element_located((By.ID, "contato")))
+        pause()
         scroll_and_click(driver, driver.find_element(
             By.XPATH, "//button[contains(text(),'Termo de Consentimento')]"
         ))
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//button[contains(text(),'Entendi e aceito os termos')]")
         ))
+        pause()
         assert driver.find_element(
             By.XPATH, "//button[contains(text(),'Entendi e aceito os termos')]"
         ).is_displayed()
@@ -167,6 +188,7 @@ class TestTermoConsentimento:
     def test_aceitar_termo_fecha_modal_e_marca_consentimento(self, driver, wait):
         driver.get(SITE_URL)
         wait.until(EC.presence_of_element_located((By.ID, "contato")))
+        pause()
 
         checkbox = driver.find_element(By.CSS_SELECTOR, "input[name='consentimento']")
         assert not checkbox.is_selected()
@@ -177,58 +199,70 @@ class TestTermoConsentimento:
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//button[contains(text(),'Entendi e aceito os termos')]")
         ))
+        pause()
         scroll_and_click(driver, driver.find_element(
             By.XPATH, "//button[contains(text(),'Entendi e aceito os termos')]"
         ))
         wait.until(EC.invisibility_of_element_located(
             (By.XPATH, "//*[contains(text(),'Termo de Consentimento para Tratamento de Dados Pessoais')]")
         ))
+        pause()
         assert driver.find_element(By.CSS_SELECTOR, "input[name='consentimento']").is_selected()
 
     def test_fechar_modal_termo_com_botao_x(self, driver, wait):
         driver.get(SITE_URL)
         wait.until(EC.presence_of_element_located((By.ID, "contato")))
+        pause()
         scroll_and_click(driver, driver.find_element(
             By.XPATH, "//button[contains(text(),'Termo de Consentimento')]"
         ))
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//*[contains(text(),'Termo de Consentimento para Tratamento de Dados Pessoais')]")
         ))
+        pause()
         driver.find_element(By.CSS_SELECTOR, "button[aria-label='Fechar termo']").click()
         wait.until(EC.invisibility_of_element_located(
             (By.XPATH, "//*[contains(text(),'Termo de Consentimento para Tratamento de Dados Pessoais')]")
         ))
+        pause()
 
     def test_fechar_modal_termo_clicando_overlay(self, driver, wait):
         driver.get(SITE_URL)
         wait.until(EC.presence_of_element_located((By.ID, "contato")))
+        pause()
         scroll_and_click(driver, driver.find_element(
             By.XPATH, "//button[contains(text(),'Termo de Consentimento')]"
         ))
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "[role='dialog']")))
+        pause()
         js_click(driver, driver.find_element(By.CSS_SELECTOR, "[role='dialog']"))
         wait.until(EC.invisibility_of_element_located(
             (By.XPATH, "//*[contains(text(),'Termo de Consentimento para Tratamento de Dados Pessoais')]")
         ))
+        pause()
 
     def test_fechar_modal_termo_com_escape(self, driver, wait):
         from selenium.webdriver.common.keys import Keys
         driver.get(SITE_URL)
         wait.until(EC.presence_of_element_located((By.ID, "contato")))
+        pause()
         scroll_and_click(driver, driver.find_element(
             By.XPATH, "//button[contains(text(),'Termo de Consentimento')]"
         ))
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//*[contains(text(),'Termo de Consentimento para Tratamento de Dados Pessoais')]")
         ))
+        pause()
         driver.find_element(By.TAG_NAME, "body").send_keys(Keys.ESCAPE)
         wait.until(EC.invisibility_of_element_located(
             (By.XPATH, "//*[contains(text(),'Termo de Consentimento para Tratamento de Dados Pessoais')]")
         ))
+        pause()
 
     def test_botao_enviar_habilitado_apos_aceitar_termo(self, driver, wait):
         driver.get(SITE_URL)
         wait.until(EC.presence_of_element_located((By.ID, "contato")))
+        pause()
 
         scroll_and_click(driver, driver.find_element(
             By.XPATH, "//button[contains(text(),'Termo de Consentimento')]"
@@ -236,12 +270,14 @@ class TestTermoConsentimento:
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//button[contains(text(),'Entendi e aceito os termos')]")
         ))
+        pause()
         scroll_and_click(driver, driver.find_element(
             By.XPATH, "//button[contains(text(),'Entendi e aceito os termos')]"
         ))
         wait.until(EC.invisibility_of_element_located(
             (By.XPATH, "//*[contains(text(),'Termo de Consentimento para Tratamento de Dados Pessoais')]")
         ))
+        pause()
         enviar = driver.find_element(By.XPATH, "//button[contains(text(),'Enviar Mensagem')]")
         assert enviar.is_enabled()
 
@@ -271,6 +307,7 @@ class TestAnonimizarClienteLGPD:
             wait.until(EC.presence_of_element_located(
                 (By.XPATH, "//*[contains(text(),'Esta ação é irreversível')]")
             ))
+            pause()
             assert "Esta ação é irreversível" in logged_in.page_source
         except NoSuchElementException:
             pytest.skip("Nenhum cliente disponível ou usuário não é admin")
@@ -296,6 +333,7 @@ class TestAnonimizarClienteLGPD:
             wait.until(EC.presence_of_element_located(
                 (By.XPATH, "//button[contains(text(),'Anonimizar definitivamente')]")
             ))
+            pause()
             btn = logged_in.find_element(
                 By.XPATH, "//button[contains(text(),'Anonimizar definitivamente')]"
             )
@@ -309,7 +347,9 @@ class TestAnonimizarClienteLGPD:
             wait.until(EC.presence_of_element_located(
                 (By.XPATH, "//button[contains(text(),'Anonimizar definitivamente')]")
             ))
+            pause()
             _campo_confirmacao(logged_in).send_keys("nome totalmente errado xyz")
+            pause()
             btn = logged_in.find_element(
                 By.XPATH, "//button[contains(text(),'Anonimizar definitivamente')]"
             )
@@ -324,6 +364,7 @@ class TestAnonimizarClienteLGPD:
             wait.until(EC.invisibility_of_element_located(
                 (By.XPATH, "//*[contains(text(),'Anonimizar cliente pela LGPD')]")
             ))
+            pause()
         except NoSuchElementException:
             pytest.skip("Nenhum cliente disponível ou usuário não é admin")
 
@@ -339,12 +380,15 @@ class TestAnonimizarClienteLGPD:
             wait.until(EC.presence_of_element_located(
                 (By.XPATH, "//button[contains(text(),'Anonimizar definitivamente')]")
             ))
+            pause()
 
             _campo_confirmacao(logged_in).send_keys(nome_cliente)
+            pause()
 
             wait.until(EC.element_to_be_clickable(
                 (By.XPATH, "//button[contains(text(),'Anonimizar definitivamente')]")
             ))
+            pause()
             assert logged_in.find_element(
                 By.XPATH, "//button[contains(text(),'Anonimizar definitivamente')]"
             ).is_enabled()
@@ -353,6 +397,7 @@ class TestAnonimizarClienteLGPD:
             wait.until(EC.invisibility_of_element_located(
                 (By.XPATH, "//*[contains(text(),'Anonimizar cliente pela LGPD')]")
             ))
+            pause()
         except NoSuchElementException:
             pytest.skip("Nenhum cliente disponível ou usuário não é admin")
 
@@ -361,6 +406,7 @@ class TestAnonimizarClienteLGPD:
         try:
             logged_in.get(CLIENTES_URL)
             wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "table")))
+            pause()
             fichas = logged_in.find_elements(By.XPATH, "//button[contains(text(),'Ver ficha 360')]")
             if not fichas:
                 pytest.skip("Nenhum cliente disponível")
@@ -371,6 +417,7 @@ class TestAnonimizarClienteLGPD:
                 wait.until(EC.presence_of_element_located(
                     (By.XPATH, "//*[contains(text(),'Ficha 360 do cliente')]")
                 ))
+                pause()
                 contadores = logged_in.find_elements(
                     By.XPATH, "//h3[contains(text(),'Processos vinculados')]/../following-sibling::span"
                 )
@@ -391,7 +438,9 @@ class TestAnonimizarClienteLGPD:
             wait.until(EC.presence_of_element_located(
                 (By.XPATH, "//button[contains(text(),'Anonimizar definitivamente')]")
             ))
+            pause()
             _campo_confirmacao(logged_in).send_keys(cliente_alvo)
+            pause()
             wait.until(EC.element_to_be_clickable(
                 (By.XPATH, "//button[contains(text(),'Anonimizar definitivamente')]")
             ))
@@ -401,6 +450,7 @@ class TestAnonimizarClienteLGPD:
             wait.until(EC.presence_of_element_located(
                 (By.XPATH, "//*[contains(text(),'anonimizado com sucesso')]")
             ))
+            pause()
             assert "anonimizado com sucesso" in logged_in.page_source
 
         except NoSuchElementException:
@@ -411,6 +461,7 @@ class TestAnonimizarClienteLGPD:
         try:
             logged_in.get(CLIENTES_URL)
             wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "table")))
+            pause()
             fichas = logged_in.find_elements(By.XPATH, "//button[contains(text(),'Ver ficha 360')]")
             if not fichas:
                 pytest.skip("Nenhum cliente disponível")
@@ -421,6 +472,7 @@ class TestAnonimizarClienteLGPD:
                 wait.until(EC.presence_of_element_located(
                     (By.XPATH, "//*[contains(text(),'Ficha 360 do cliente')]")
                 ))
+                pause()
                 ativos = logged_in.find_elements(
                     By.XPATH,
                     "//*[contains(@class,'statusATIVO') or contains(@class,'statusSUSPENSO')]"
@@ -442,7 +494,9 @@ class TestAnonimizarClienteLGPD:
             wait.until(EC.presence_of_element_located(
                 (By.XPATH, "//button[contains(text(),'Anonimizar definitivamente')]")
             ))
+            pause()
             _campo_confirmacao(logged_in).send_keys(cliente_alvo)
+            pause()
             wait.until(EC.element_to_be_clickable(
                 (By.XPATH, "//button[contains(text(),'Anonimizar definitivamente')]")
             ))
@@ -452,9 +506,11 @@ class TestAnonimizarClienteLGPD:
             wait.until(EC.presence_of_element_located(
                 (By.XPATH, "//*[contains(text(),'processos ativos ou suspensos')]")
             ))
+            pause()
             assert "processos ativos ou suspensos" in logged_in.page_source
 
             logged_in.find_element(By.XPATH, "//button[contains(text(),'Cancelar')]").click()
+            pause()
 
         except NoSuchElementException:
             pytest.skip("Nenhum cliente com processo ativo disponível ou usuário não é admin")
