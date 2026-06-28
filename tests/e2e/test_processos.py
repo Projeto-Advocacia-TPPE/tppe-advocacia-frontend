@@ -5,7 +5,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support.select import Select
 
-from conftest import BASE_URL, do_login, do_logout
+from conftest import BASE_URL, do_login, do_logout, pause
 
 PROCESSOS_URL = f"{BASE_URL}/sistema/processos"
 
@@ -23,9 +23,8 @@ def scroll_and_click(driver, element):
 def _numero_cnj_unico() -> str:
     """Gera número CNJ com exatamente 20 dígitos (validação do formulário)."""
     ts = int(time.time())
-    dd   = f"{ts % 99:02d}"     # 2 dígitos – parcela de unicidade
-    oooo = f"{ts % 9999:04d}"   # 4 dígitos – origem
-    # formato: NNNNNNN-DD.AAAA.J.TT.OOOO → 7+2+4+1+2+4 = 20 dígitos
+    dd   = f"{ts % 99:02d}"
+    oooo = f"{ts % 9999:04d}"
     return f"1000001-{dd}.2024.8.07.{oooo}"
 
 
@@ -38,6 +37,7 @@ class TestCadastrarProcesso:
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//h1[contains(text(),'Core Jurídico')]")
         ))
+        pause()
         assert "Core Jurídico" in logged_in.page_source
 
     def test_metricas_processos_visiveis(self, logged_in, wait):
@@ -45,6 +45,7 @@ class TestCadastrarProcesso:
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//h1[contains(text(),'Core Jurídico')]")
         ))
+        pause()
         assert "Total de processos" in logged_in.page_source
         assert "Ativos"             in logged_in.page_source
         assert "Suspensos"          in logged_in.page_source
@@ -53,6 +54,7 @@ class TestCadastrarProcesso:
     def test_tabela_processos_exibe_colunas(self, logged_in, wait):
         logged_in.get(PROCESSOS_URL)
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "table")))
+        pause()
         assert "Nº CNJ"       in logged_in.page_source
         assert "Tipo de ação" in logged_in.page_source
         assert "Cliente"      in logged_in.page_source
@@ -65,10 +67,12 @@ class TestCadastrarProcesso:
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(.,'Novo Processo')]")
         ))
+        pause()
         logged_in.find_element(By.XPATH, "//button[contains(.,'Novo Processo')]").click()
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//*[contains(text(),'Número do processo')]")
         ))
+        pause()
         assert "Número do processo" in logged_in.page_source
 
     def test_modal_exibe_campos_do_formulario(self, logged_in, wait):
@@ -76,10 +80,12 @@ class TestCadastrarProcesso:
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(.,'Novo Processo')]")
         ))
+        pause()
         logged_in.find_element(By.XPATH, "//button[contains(.,'Novo Processo')]").click()
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//*[contains(text(),'Número do processo')]")
         ))
+        pause()
         assert "Número do processo (CNJ)" in logged_in.page_source
         assert "Cliente"                  in logged_in.page_source
         assert "Tipo / área do direito"   in logged_in.page_source
@@ -91,10 +97,12 @@ class TestCadastrarProcesso:
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(.,'Novo Processo')]")
         ))
+        pause()
         logged_in.find_element(By.XPATH, "//button[contains(.,'Novo Processo')]").click()
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//*[contains(text(),'Número do processo')]")
         ))
+        pause()
         btn = logged_in.find_element(
             By.XPATH, "//button[contains(text(),'Adicionar Processo')]"
         )
@@ -105,52 +113,57 @@ class TestCadastrarProcesso:
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(.,'Novo Processo')]")
         ))
+        pause()
         logged_in.find_element(By.XPATH, "//button[contains(.,'Novo Processo')]").click()
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(text(),'Cancelar')]")
         ))
+        pause()
         logged_in.find_element(By.XPATH, "//button[contains(text(),'Cancelar')]").click()
         wait.until(EC.invisibility_of_element_located(
             (By.XPATH, "//*[contains(text(),'Número do processo')]")
         ))
+        pause()
 
     def test_cadastrar_processo_aparece_na_lista(self, logged_in, wait):
-        numero  = _numero_cnj_unico()
-        tipo    = f"Ação Selenium {int(time.time())}"
+        numero = _numero_cnj_unico()
+        tipo   = f"Ação Selenium {int(time.time())}"
 
         logged_in.get(PROCESSOS_URL)
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(.,'Novo Processo')]")
         ))
+        pause()
         logged_in.find_element(By.XPATH, "//button[contains(.,'Novo Processo')]").click()
         wait.until(EC.presence_of_element_located(
             (By.CSS_SELECTOR, "input[placeholder*='0711598']")
         ))
+        pause()
 
-        # Número CNJ — obrigatório: exatos 20 dígitos
         logged_in.find_element(
             By.CSS_SELECTOR, "input[placeholder*='0711598']"
         ).send_keys(numero)
+        pause()
 
-        # Cliente — opcional; select identificado pela option padrão "Sem cliente vinculado"
         try:
             sel_cliente = Select(logged_in.find_element(
                 By.XPATH, "//select[.//option[contains(text(),'Sem cliente')]]"
             ))
             if len(sel_cliente.options) > 1:
                 sel_cliente.select_by_index(1)
+                pause()
         except NoSuchElementException:
-            pass  # campo opcional — prossegue sem cliente
+            pass
 
-        # Tipo de ação — obrigatório
         logged_in.find_element(
             By.CSS_SELECTOR, "input[placeholder*='Ação de cobrança']"
         ).send_keys(tipo)
+        pause()
 
-        # Vara / tribunal — obrigatório
         logged_in.find_element(
             By.CSS_SELECTOR, "input[placeholder*='TJDFT']"
         ).send_keys("TJDFT")
+        pause()
 
         wait.until(EC.element_to_be_clickable(
             (By.XPATH, "//button[contains(text(),'Adicionar Processo')]")
@@ -162,6 +175,7 @@ class TestCadastrarProcesso:
         wait.until(EC.presence_of_element_located(
             (By.XPATH, f"//*[contains(text(),'{tipo}')]")
         ))
+        pause()
         assert tipo in logged_in.page_source
 
 
@@ -177,9 +191,9 @@ class TestMovimentacoesProcesso:
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//*[contains(text(),'Movimentações processuais')]")
         ))
+        pause()
 
     def _abrir_formulario_movimentacao(self, driver, wait):
-        """Expande o formulário de movimentação clicando no toggle 'Registrar'."""
         toggle = driver.find_element(
             By.XPATH,
             "//h3[contains(text(),'Movimentações processuais')]/../following-sibling::button"
@@ -188,16 +202,19 @@ class TestMovimentacoesProcesso:
         wait.until(EC.presence_of_element_located(
             (By.CSS_SELECTOR, "input[placeholder*='Audiência de conciliação']")
         ))
+        pause()
 
     def test_botao_abrir_ficha_abre_modal_detalhes(self, logged_in, wait):
         logged_in.get(PROCESSOS_URL)
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "table")))
+        pause()
         try:
             btn = logged_in.find_element(By.XPATH, "//button[contains(text(),'Abrir Ficha')]")
             scroll_and_click(logged_in, btn)
             wait.until(EC.presence_of_element_located(
                 (By.XPATH, "//*[contains(text(),'Movimentações processuais')]")
             ))
+            pause()
             assert "Movimentações processuais" in logged_in.page_source
         except NoSuchElementException:
             pytest.skip("Nenhum processo disponível")
@@ -248,6 +265,7 @@ class TestMovimentacoesProcesso:
                 By.CSS_SELECTOR, "input[placeholder*='Audiência de conciliação']"
             )
             campo_titulo.send_keys(titulo_unico)
+            pause()
             wait.until(EC.element_to_be_clickable(
                 (By.XPATH, "//button[contains(text(),'Registrar movimentação')]")
             ))
@@ -257,6 +275,7 @@ class TestMovimentacoesProcesso:
             wait.until(EC.presence_of_element_located(
                 (By.XPATH, f"//*[contains(text(),'{titulo_unico}')]")
             ))
+            pause()
             assert titulo_unico in logged_in.page_source
         except NoSuchElementException:
             pytest.skip("Nenhum processo disponível")
@@ -283,14 +302,12 @@ class TestStatusProcesso:
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "table")))
         btn = driver.find_element(By.XPATH, "//button[contains(text(),'Abrir Ficha')]")
         scroll_and_click(driver, btn)
-        # Aguarda o botão de status aparecer (pode estar desabilitado, por isso presence não clickable)
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//button[contains(text(),'Alterar status')]")
         ))
+        pause()
 
     def _select_status_no_modal(self, driver):
-        """Retorna o Select de status do modal de detalhe (não o filtro da página)."""
-        # O select da página de filtro tem a option "Todos os status"; o do modal não.
         return Select(driver.find_element(
             By.XPATH, "//select[not(.//option[contains(text(),'Todos')])]"
         ))
@@ -298,6 +315,7 @@ class TestStatusProcesso:
     def test_badge_status_visivel_na_tabela(self, logged_in, wait):
         logged_in.get(PROCESSOS_URL)
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "table")))
+        pause()
         assert (
             "Ativo"           in logged_in.page_source or
             "Suspenso"        in logged_in.page_source or
@@ -332,6 +350,7 @@ class TestStatusProcesso:
             self._abrir_ficha(logged_in, wait)
             sel = self._select_status_no_modal(logged_in)
             sel.select_by_visible_text("Suspenso")
+            pause()
             wait.until(EC.element_to_be_clickable(
                 (By.XPATH, "//button[contains(text(),'Alterar status')]")
             ))
@@ -343,6 +362,7 @@ class TestStatusProcesso:
                 "atualizado"                    in d.page_source or
                 "Suspenso"                      in d.page_source
             ))
+            pause()
             assert (
                 "Suspenso"                      in logged_in.page_source or
                 "Status alterado para Suspenso" in logged_in.page_source
@@ -354,7 +374,6 @@ class TestStatusProcesso:
         try:
             self._abrir_ficha(logged_in, wait)
             sel = self._select_status_no_modal(logged_in)
-            # Escolhe qualquer status diferente do atual
             opcao_diferente = next(
                 (o for o in sel.options if o.get_attribute("value") != sel.first_selected_option.get_attribute("value")),
                 None
@@ -362,6 +381,7 @@ class TestStatusProcesso:
             if not opcao_diferente:
                 pytest.skip("Processo não possui status alternativo disponível")
             opcao_diferente.click()
+            pause()
             wait.until(EC.element_to_be_clickable(
                 (By.XPATH, "//button[contains(text(),'Alterar status')]")
             ))
@@ -372,12 +392,14 @@ class TestStatusProcesso:
                 "Status alterado" in d.page_source or
                 "atualizado"      in d.page_source
             ))
+            pause()
         except NoSuchElementException:
             pytest.skip("Nenhum processo disponível")
 
     def test_status_refletido_na_coluna_da_tabela(self, logged_in, wait):
         logged_in.get(PROCESSOS_URL)
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "table")))
+        pause()
         assert "Status" in logged_in.page_source
 
 
@@ -393,6 +415,7 @@ class TestAnotacoesProcesso:
         wait.until(EC.presence_of_element_located(
             (By.XPATH, "//*[contains(text(),'Anotações internas')]")
         ))
+        pause()
 
     def test_ficha_exibe_secao_anotacoes(self, logged_in, wait):
         try:
@@ -414,7 +437,6 @@ class TestAnotacoesProcesso:
     def test_botao_registrar_anotacao_desabilitado_vazio(self, logged_in, wait):
         try:
             self._abrir_ficha(logged_in, wait)
-            # O botão de envio das anotações tem type="submit" (está dentro de <form>)
             btn = logged_in.find_element(By.CSS_SELECTOR, "button[type='submit']")
             assert not btn.is_enabled()
         except NoSuchElementException:
@@ -429,6 +451,7 @@ class TestAnotacoesProcesso:
             )
             scroll_and_click(logged_in, textarea)
             textarea.send_keys(anotacao_unica)
+            pause()
             wait.until(EC.element_to_be_clickable(
                 (By.CSS_SELECTOR, "button[type='submit']")
             ))
@@ -436,6 +459,7 @@ class TestAnotacoesProcesso:
             wait.until(EC.presence_of_element_located(
                 (By.XPATH, f"//*[contains(text(),'{anotacao_unica}')]")
             ))
+            pause()
             assert anotacao_unica in logged_in.page_source
         except NoSuchElementException:
             pytest.skip("Nenhum processo disponível")
@@ -451,11 +475,13 @@ class TestAnotacoesProcesso:
                 wait.until(EC.presence_of_element_located(
                     (By.XPATH, "//button[contains(text(),'Salvar')]")
                 ))
+                pause()
                 assert "Salvar"   in logged_in.page_source
                 assert "Cancelar" in logged_in.page_source
                 logged_in.find_element(
                     By.XPATH, "//button[contains(text(),'Cancelar')]"
                 ).click()
+                pause()
             except NoSuchElementException:
                 pytest.skip("Nenhuma anotação disponível para editar")
         except NoSuchElementException:
