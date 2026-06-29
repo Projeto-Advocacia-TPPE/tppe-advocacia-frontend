@@ -33,6 +33,7 @@ function InputField({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
+          autoComplete="new-password"
         />
         <button type="button" className={styles.eyeBtn} onClick={onToggle} tabIndex={-1}>
           {show ? <EyeOff size={16} /> : <Eye size={16} />}
