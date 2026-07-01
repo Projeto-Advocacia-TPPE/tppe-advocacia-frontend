@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
-import { Analytics } from '@vercel/analytics/react';
 
 function ScrollToHash() {
   const { hash } = useLocation();
@@ -122,12 +121,6 @@ export default function App() {
         </Route>
       </Routes>
     </BrowserRouter>
-    <Analytics beforeSend={(event) => {
-      if (new URL(event.url).pathname.startsWith('/sistema') ||
-          new URL(event.url).pathname.startsWith('/login') ||
-          new URL(event.url).pathname.startsWith('/reset-password')) return null;
-      return event;
-    }} />
     </>
   );
 }
