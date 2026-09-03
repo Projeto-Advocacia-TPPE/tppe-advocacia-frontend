@@ -1,0 +1,32 @@
+name: CI/CD pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: Configurando o node
+        uses:  actions/setup-node@v4
+        with:
+          node-version: '20'
+          chache: 'npm'
+
+      - name: instalar dependências
+        run: npm install
+
+      - name:  Executar build do projeto
+        run: npm run build
+    
